@@ -1,0 +1,584 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LaneSight Workbench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: app shell — left rail (persona + views), sticky top bar (rooftop scope), dense content grid. Dealer Principal sees the group umbrella first. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --surface2:#eef1f6; --line:#dbe1ea; --line2:#c8d0dc;
+  --fg:#141b2b; --fg2:#4a5568; --fg3:#7a869a;
+  --accent:#0b7f86; --accent-soft:#d8f0f1; --accent2:#3b5bdb; --accent2-soft:#e3e9ff;
+  --good:#1f8a4c; --good-soft:#dcf3e5; --warn:#b26a00; --warn-soft:#fff0d6; --bad:#c53030; --bad-soft:#fde2e2;
+  --rail:#0f1729; --rail-fg:#c9d3e6; --rail-fg2:#7d8aa5; --rail-on:#1c2a47;
+  --display:"Space Grotesk",Inter,system-ui,sans-serif; --body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1c; --surface:#111a2e; --surface2:#16213a; --line:#22304d; --line2:#2d3d60;
+  --fg:#eaf0fa; --fg2:#a9b4cc; --fg3:#6f7c99;
+  --accent:#4fd1c5; --accent-soft:rgba(79,209,197,.14); --accent2:#8aa2ff; --accent2-soft:rgba(124,156,255,.15);
+  --good:#68d391; --good-soft:rgba(104,211,145,.14); --warn:#f6ad55; --warn-soft:rgba(246,173,85,.14); --bad:#fc8181; --bad-soft:rgba(252,129,129,.14);
+  --rail:#070b15; --rail-fg:#c9d3e6; --rail-fg2:#6f7c99; --rail-on:#16213a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1c; --surface:#111a2e; --surface2:#16213a; --line:#22304d; --line2:#2d3d60;
+  --fg:#eaf0fa; --fg2:#a9b4cc; --fg3:#6f7c99;
+  --accent:#4fd1c5; --accent-soft:rgba(79,209,197,.14); --accent2:#8aa2ff; --accent2-soft:rgba(124,156,255,.15);
+  --good:#68d391; --good-soft:rgba(104,211,145,.14); --warn:#f6ad55; --warn-soft:rgba(246,173,85,.14); --bad:#fc8181; --bad-soft:rgba(252,129,129,.14);
+  --rail:#070b15; --rail-fg:#c9d3e6; --rail-fg2:#6f7c99; --rail-on:#16213a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+/* rail */
+.rail{background:var(--rail);color:var(--rail-fg);padding-block:18px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:0 6px}
+.brand .m{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4fd1c5,#7c9cff);display:grid;place-items:center}
+.brand b{font-family:var(--display);font-size:17px;color:#fff;letter-spacing:-.01em}
+.brand small{display:block;font-size:10.5px;color:var(--rail-fg2);font-family:var(--mono)}
+.rail h6{margin:0 0 6px;padding:0 8px;font:600 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--rail-fg2)}
+.persona{display:grid;gap:4px}
+.persona button,.nav button{background:none;border:0;text-align:left;padding:7px 10px;border-radius:8px;color:var(--rail-fg);display:flex;align-items:center;gap:9px;font-size:13px;width:100%}
+.persona button:hover,.nav button:hover{background:var(--rail-on)}
+.persona button.on{background:var(--rail-on);color:#fff;box-shadow:inset 2px 0 0 #4fd1c5}
+.persona .av{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:700 10px var(--mono);background:#1c2a47;color:#8fe3db;flex:0 0 22px}
+.nav{display:grid;gap:2px}
+.nav button.on{background:var(--rail-on);color:#fff}
+.nav .ct{margin-left:auto;font:600 10.5px var(--mono);color:#8fe3db}
+.nav svg{flex:0 0 16px}
+.rail .foot{margin-top:auto;font-size:11px;color:var(--rail-fg2);padding:0 8px;line-height:1.5}
+/* main */
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:12px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.top h1{margin:0;font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.top .sub{font-size:12px;color:var(--fg3)}
+.top .ctl{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select{background:var(--surface);color:var(--fg);border:1px solid var(--line2);border-radius:8px;padding:7px 10px;font:500 13px var(--body)}
+.live{display:inline-flex;align-items:center;gap:6px;font:600 11px var(--mono);color:var(--good);background:var(--good-soft);padding:5px 9px;border-radius:999px}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--good);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
+.content{padding-block:20px 48px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px));display:grid;gap:16px;min-width:0}
+.view{display:grid;gap:16px;min-width:0}
+.note{font-size:11.5px;color:var(--fg3)}
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--accent2-soft);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--fg2)}
+.banner b{color:var(--fg)}
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.ph{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ph h2{margin:0;font-size:14px;font-weight:600}
+.ph .hint{font-size:12px;color:var(--fg3)}
+.ph .r{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pb{padding:14px 16px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-wide{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:2px;min-width:0}
+.kpi .l{font-size:11.5px;color:var(--fg3)}
+.kpi .v{font-family:var(--display);font-size:24px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:11.5px;color:var(--fg2)}
+.up{color:var(--good)}.dn{color:var(--bad)}.wn{color:var(--warn)}
+/* tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font:600 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface2)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--surface2)}
+td .s{display:block;font-size:11.5px;color:var(--fg3)}
+td.n,th.n{text-align:right}
+.name{font-weight:600}
+/* chips */
+.tier{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;font:700 12px var(--mono)}
+.t1{background:var(--accent-soft);color:var(--accent)}.t2{background:var(--accent2-soft);color:var(--accent2)}.t3{background:var(--warn-soft);color:var(--warn)}.t4{background:var(--surface2);color:var(--fg3)}
+.chip{display:inline-flex;align-items:center;gap:5px;font:600 11px var(--mono);padding:3px 8px;border-radius:6px;white-space:nowrap;background:var(--surface2);color:var(--fg2)}
+.c-acc{background:var(--accent-soft);color:var(--accent)}.c-ind{background:var(--accent2-soft);color:var(--accent2)}
+.c-good{background:var(--good-soft);color:var(--good)}.c-warn{background:var(--warn-soft);color:var(--warn)}.c-bad{background:var(--bad-soft);color:var(--bad)}
+.reason{display:inline-block;font-size:11.5px;color:var(--fg2);background:var(--surface2);border-radius:5px;padding:2px 7px;margin:2px 4px 2px 0}
+.btn{border:1px solid var(--line2);background:var(--surface);border-radius:8px;padding:6px 11px;font-size:12.5px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 10px;font-size:12px;color:var(--fg2)}
+.seg button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+/* bars */
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 64px;gap:10px;align-items:center;font-size:12.5px}
+.bar .t{height:10px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.bar .f{height:100%;background:var(--accent);border-radius:6px}
+.bar .f.alt{background:var(--accent2)}
+.bar .v{text-align:right;font:600 12px var(--mono)}
+.lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* funnel */
+.fun{display:grid;gap:6px}
+.fun .row{display:grid;grid-template-columns:110px minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:12.5px}
+.fun .t{height:22px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.fun .f{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.fun .v{text-align:right;font:600 12px var(--mono)}
+/* feed */
+.feed{display:grid}
+.ev{display:grid;grid-template-columns:58px 30px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev.new{animation:flash 2.4s ease-out}
+@keyframes flash{from{background:var(--accent-soft)}to{background:transparent}}
+@media (prefers-reduced-motion:reduce){.ev.new{animation:none}}
+.ev .tm{font:600 12px var(--mono);color:var(--fg2)}
+.ev .src{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--surface2);color:var(--fg2)}
+.ev .who{font-weight:600}
+.ev .meta{font-size:12px;color:var(--fg3)}
+.ev .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+/* 360 */
+.hero{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.hero .av{width:46px;height:46px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:700 16px var(--display)}
+.hero h2{margin:0;font-family:var(--display);font-size:21px;font-weight:600}
+.hero .meta{font-size:12.5px;color:var(--fg3)}
+.garage{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.car{border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:grid;gap:3px;background:var(--surface)}
+.car.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.car b{font-size:13px}.car span{font-size:11.5px;color:var(--fg3)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 14px;font-size:13px}
+.kv span{color:var(--fg3)}.kv b{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cbox{border:1px solid var(--line);border-radius:9px;padding:12px}
+.cbox h3{margin:0 0 8px;font-size:12px;font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.cbox.inc h3{color:var(--bad)}.cbox.ls{border-color:var(--accent)}.cbox.ls h3{color:var(--accent)}
+.formula{font:12px/1.6 var(--mono);background:var(--surface2);border-radius:8px;padding:10px 12px;color:var(--fg2);overflow-x:auto}
+.tl{display:grid;gap:0}
+.tl .it{display:grid;grid-template-columns:76px 12px minmax(0,1fr);gap:10px;font-size:12.5px;padding:6px 0}
+.tl .it .w{color:var(--fg3);font:500 11.5px var(--mono)}
+.tl .it .d{width:10px;height:10px;border-radius:50%;background:var(--line2);margin-top:4px}
+.tl .it .d.a{background:var(--accent)}.tl .it .d.b{background:var(--accent2)}.tl .it .d.c{background:var(--warn)}
+.talk{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:10px 14px;font-size:13px;color:var(--fg)}
+.mpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.gauge{display:grid;gap:4px;font-size:11.5px;color:var(--fg3)}
+.gauge .t{height:8px;border-radius:5px;background:var(--surface2);overflow:hidden}
+.gauge .f{height:100%;border-radius:5px;background:var(--good)}
+/* scan */
+.scan{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
+.phone{border:2px solid var(--line2);border-radius:28px;padding:10px;background:var(--surface2)}
+.phone .scr{border-radius:20px;overflow:hidden;background:var(--surface);border:1px solid var(--line)}
+.cam{height:150px;background:#0b1222;position:relative;display:grid;place-items:center}
+.cam .frm{width:170px;height:56px;border:2px solid #4fd1c5;border-radius:8px;display:grid;place-items:center}
+.cam .bc{width:140px;height:28px;background:repeating-linear-gradient(90deg,#e8eef9 0 2px,transparent 2px 4px,#e8eef9 4px 5px,transparent 5px 8px,#e8eef9 8px 11px,transparent 11px 13px)}
+.cam .ln{position:absolute;left:52px;right:52px;top:74px;height:2px;background:#fc8181;box-shadow:0 0 8px #fc8181}
+.cam .h{position:absolute;bottom:8px;font:500 10px var(--mono);color:#a9b4cc}
+.phone .in{padding:10px;display:grid;gap:8px}
+.phone input{width:100%;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font:500 12.5px var(--mono);background:var(--surface);color:var(--fg)}
+/* ask */
+.ask textarea{width:100%;min-height:64px;border:1px solid var(--line2);border-radius:9px;padding:10px 12px;font:14px var(--body);background:var(--surface);color:var(--fg);resize:vertical}
+.sugg{display:flex;flex-wrap:wrap;gap:6px}
+.sql{font:12px/1.55 var(--mono);background:var(--surface2);border-radius:8px;padding:10px 12px;color:var(--fg2);white-space:pre;overflow-x:auto}
+.svgc text{font-family:var(--body)}
+.toast{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:9px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:20}
+@media (max-width:1180px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.g-wide{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;height:auto;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .persona,.nav{display:flex;overflow-x:auto;gap:4px}
+  .persona button,.nav button{width:auto;white-space:nowrap}
+  .rail .foot{display:none}
+  .top,.content{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .top{position:static}
+  .g2,.g3,.compare,.scan{grid-template-columns:minmax(0,1fr)}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mpi{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bar{grid-template-columns:110px minmax(0,1fr) 56px}
+  .ev{grid-template-columns:48px minmax(0,1fr);}
+  .ev .src{display:none}.ev .act{grid-column:1/-1;justify-content:flex-start}
+}
+</style>
+</head><body style="margin:0">
+
+<div class="app">
+  <aside class="rail" aria-label="LaneSight navigation">
+    <div class="brand"><div class="m"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0f1c" stroke-width="2.6" stroke-linecap="round"><path d="M3 17h18M6 12h12M9 7h6"/></svg></div><div><b>LaneSight</b><small>Ortiz Auto Group</small></div></div>
+    <div><h6>Viewing as</h6><div class="persona" id="persona"></div></div>
+    <div><h6>Views</h6><nav class="nav" id="nav"></nav></div>
+    <div class="foot">Illustrative mockup. All customers, staff and stores are fictional. Pilot scope: 3 rooftops; the other 5 show the target state.</div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <div><h1 id="vt">Group overview</h1><div class="sub" id="vs"></div></div>
+      <div class="ctl">
+        <span class="live"><i></i>LIVE · Tue Nov 10</span>
+        <label class="note" for="roof" style="font-size:12px">Scope</label>
+        <select id="roof"></select>
+      </div>
+    </header>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- data (fictional) ---------- */
+const ROOFS=[
+ {id:"R1",name:"Ortiz BMW of Ridgeline",short:"BMW Ridgeline",brand:"BMW",pilot:true,arr:52,t12:18,c60:83,appt:14,acq:6,sold:4,gross:61400,idle:2,eqFlag:11,cam:true},
+ {id:"R2",name:"Ortiz BMW North Shore",short:"BMW North Shore",brand:"BMW",pilot:true,arr:41,t12:15,c60:71,appt:9,acq:4,sold:3,gross:44100,idle:3,eqFlag:9,cam:false},
+ {id:"R3",name:"Ortiz MINI of Ridgeline",short:"MINI Ridgeline",brand:"MINI",pilot:true,arr:23,t12:6,c60:88,appt:4,acq:2,sold:1,gross:15900,idle:0,eqFlag:3,cam:false},
+ {id:"R4",name:"Ortiz Mercedes-Benz of Harbor Point",short:"Mercedes Harbor Pt",brand:"Mercedes-Benz",pilot:false,arr:47,t12:17,c60:58,appt:8,acq:3,sold:3,gross:49700,idle:6,eqFlag:12,cam:true},
+ {id:"R5",name:"Ortiz Lexus of Stonebridge",short:"Lexus Stonebridge",brand:"Lexus",pilot:false,arr:38,t12:12,c60:64,appt:7,acq:3,sold:2,gross:31200,idle:4,eqFlag:7,cam:false},
+ {id:"R6",name:"Ortiz Toyota Westfield",short:"Toyota Westfield",brand:"Toyota",pilot:false,arr:66,t12:21,c60:52,appt:10,acq:5,sold:4,gross:38800,idle:8,eqFlag:15,cam:false},
+ {id:"R7",name:"Ortiz Honda Westfield",short:"Honda Westfield",brand:"Honda",pilot:false,arr:58,t12:16,c60:61,appt:8,acq:4,sold:3,gross:29500,idle:5,eqFlag:10,cam:false},
+ {id:"R8",name:"Ortiz Pre-Owned Center",short:"Pre-Owned Center",brand:"Multi",pilot:false,arr:12,t12:4,c60:75,appt:2,acq:2,sold:0,gross:9800,idle:1,eqFlag:2,cam:false}
+];
+const OWNERS={R1:["Dana Whitfield","Marco Ruiz","Priya Nair"],R2:["Ben Okafor","Lena Hart"],R3:["Sam Tillman"],R4:["Grace Liu","Theo Marsh"],R5:["Nina Park"],R6:["Carlos Vega","Jill Moran"],R7:["Evan Cho"],R8:["Ray Doyle"]};
+// opportunities (service lane) — the three spec cases are the first three
+const OPPS=[
+ {id:"o1",name:"Robert Castellano",veh:"2024 BMW X7 xDrive40i",mi:70473,roof:"R1",tier:1,score:91,reasons:["Warranty expired by miles","$1,915 customer-pay RO today","New X7 within $105/mo"],owner:"Dana Whitfield",src:"camera",arr:"7:38",status:"In service",insp:"Complete · all pass",lsEq:-8857,incEq:-33971,disp:"Desked",last:"Call · 12 min ago",idle:0,deal:"Finance",case:"A"},
+ {id:"o2",name:"Margaret Hartwell",veh:"2022 BMW X7 xDrive40i",mi:41200,roof:"R1",tier:1,score:88,reasons:["Paid off · +$33.7K equity","Payment drops $194/mo on 2027 X7","14 campaign emails, no reply"],owner:"Marco Ruiz",src:"scan",arr:"8:02",status:"In service",insp:"In progress · ETA 10:30",lsEq:33732,incEq:33732,disp:"Appointment set",last:"Text · 1 h ago",idle:1,deal:"Paid off",case:"B"},
+ {id:"o3",name:"Varga household",veh:"9 vehicles · 1990 BMW M3 in today",mi:38900,roof:"R1",tier:1,score:84,reasons:["Household owns 9 vehicles","White-glove client","Spouse's 2021 X5 at 52K mi"],owner:"Priya Nair",src:"checkin",arr:"8:15",status:"In service",insp:"Not required",lsEq:null,incEq:null,disp:"Contacted",last:"Visit · today",idle:0,deal:"Relationship",case:"C"},
+ {id:"o4",name:"Helen Abrams",veh:"2023 BMW X3 xDrive30i",mi:31880,roof:"R1",tier:2,score:74,reasons:["Lease ends in 82 days","Projected 6,100 mi over allowance"],owner:"Dana Whitfield",src:"camera",arr:"8:40",status:"In service",insp:"Complete · 2 caution",lsEq:2150,incEq:-1100,disp:"Contacted",last:"Call · 40 min ago",idle:0,deal:"Lease"},
+ {id:"o5",name:"Victor Lindqvist",veh:"2021 BMW 540i xDrive",mi:50115,roof:"R1",tier:2,score:71,reasons:["Matches used-inventory gap (5 Series)","+$6.2K equity"],owner:"Marco Ruiz",src:"camera",arr:"9:05",status:"In service",insp:"Complete · all pass",lsEq:6240,incEq:4100,disp:"New",last:"None",idle:0.3,deal:"Finance"},
+ {id:"o6",name:"Aisha Bello",veh:"2020 BMW X5 xDrive40i",mi:88300,roof:"R1",tier:2,score:68,reasons:["$3,420 brake + tire estimate","Out of warranty"],owner:"Priya Nair",src:"scan",arr:"9:20",status:"Waiting",insp:"Complete · 1 fail",lsEq:9800,incEq:9800,disp:"New",last:"None",idle:0.2,deal:"Cash"},
+ {id:"o7",name:"Tom Rourke",veh:"2018 Ford F-150 XLT",mi:115200,roof:"R1",tier:2,score:63,reasons:["Off-brand trade, wholesale spread $3.1K","Customer-pay RO $640"],owner:"Dana Whitfield",src:"camera",arr:"9:42",status:"In service",insp:"Complete · 3 caution",lsEq:14200,incEq:null,disp:"New",last:"None",idle:0.1,deal:"Cash"},
+ {id:"o8",name:"Kevin Tran",veh:"2019 BMW M550i",mi:61800,roof:"R1",tier:3,score:52,reasons:["Declined valve cover reseal","Recon risk high"],owner:"Marco Ruiz",src:"checkin",arr:"10:05",status:"Waiting",insp:"Complete · 2 fail",lsEq:3900,incEq:7400,disp:"Not now",last:"Call · 2 h ago",idle:0,deal:"Finance"},
+ {id:"o9",name:"Ivy Chen",veh:"2023 BMW 330i xDrive",mi:22400,roof:"R2",tier:2,score:72,reasons:["Payment within $90/mo","Loyalty incentive $2,000"],owner:"Ben Okafor",src:"checkin",arr:"7:55",status:"In service",insp:"Complete · all pass",lsEq:-2100,incEq:-6800,disp:"Contacted",last:"Email · 2 h ago",idle:0,deal:"Finance"},
+ {id:"o10",name:"Paul Mercer",veh:"2022 BMW X5 M50i",mi:47600,roof:"R2",tier:1,score:86,reasons:["+$18.4K equity","Matches inventory gap"],owner:"Lena Hart",src:"scan",arr:"8:31",status:"In service",insp:"Complete · all pass",lsEq:18400,incEq:12900,disp:"Appointment set",last:"Call · 1 h ago",idle:0,deal:"Finance"},
+ {id:"o11",name:"Grace Okoro",veh:"2021 MINI Countryman S",mi:44100,roof:"R3",tier:2,score:70,reasons:["Paid off","Customer-pay RO $1,120"],owner:"Sam Tillman",src:"checkin",arr:"8:10",status:"In service",insp:"Complete · 1 caution",lsEq:15300,incEq:15300,disp:"Sold / Acquired",last:"Desk · yesterday",idle:0,deal:"Paid off"},
+ {id:"o12",name:"Daniel Shore",veh:"2023 Mercedes-Benz GLE 350",mi:36500,roof:"R4",tier:2,score:73,reasons:["Lease ends in 60 days","OEM loyalty offer eligible"],owner:"Grace Liu",src:"camera",arr:"7:48",status:"In service",insp:"Complete · all pass",lsEq:3400,incEq:null,disp:"New",last:"None",idle:26,deal:"Lease",oem:true},
+ {id:"o13",name:"Laura Kim",veh:"2022 Lexus RX 350",mi:39900,roof:"R5",tier:1,score:82,reasons:["Paid off","+$21.9K equity"],owner:"Nina Park",src:"checkin",arr:"8:20",status:"In service",insp:"Complete · all pass",lsEq:21900,incEq:null,disp:"Contacted",last:"Call · 3 h ago",idle:0,deal:"Paid off"},
+ {id:"o14",name:"Omar Haddad",veh:"2021 Toyota Highlander",mi:58800,roof:"R6",tier:2,score:66,reasons:["Matches inventory gap","Customer-pay RO $890"],owner:"Carlos Vega",src:"checkin",arr:"9:10",status:"In service",insp:"Complete · 2 caution",lsEq:9100,incEq:null,disp:"New",last:"None",idle:30,deal:"Finance"},
+ {id:"o15",name:"Sara Nilsen",veh:"2020 Honda Pilot",mi:72300,roof:"R7",tier:2,score:64,reasons:["Out of warranty","Paid off"],owner:"Evan Cho",src:"checkin",arr:"8:50",status:"In service",insp:"Complete · 1 fail",lsEq:17600,incEq:null,disp:"Desked",last:"Desk · 1 h ago",idle:0,deal:"Paid off"}
+];
+const TOMORROW=[
+ {name:"Joseph Ramsey",veh:"2022 BMW X7 xDrive40i · paid off",t:"8:00",tier:1,score:87,reason:"Paid off · +$33.7K · payment −$194/mo",owner:"Marco Ruiz",roof:"R1",act:"Personal call today"},
+ {name:"Anthony Russo",veh:"2024 BMW M3 CS · +$39.2K",t:"7:30",tier:1,score:85,reason:"Equity +$39.2K, in house account",owner:"Dana Whitfield",roof:"R1",act:"Reassigned from Orphan"},
+ {name:"John Brennan",veh:"2020 BMW X3 M Competition · 60K mi",t:"1:15",tier:2,score:74,reason:"+$32.4K equity, warranty expired",owner:"Priya Nair",roof:"R1",act:"Text with valuation"},
+ {name:"Mirza Shah",veh:"2021 BMW X3 xDrive30i · 62K mi",t:"2:00",tier:2,score:72,reason:"Paid off, high mileage",owner:"Dana Whitfield",roof:"R1",act:"Call"},
+ {name:"Lebit Musa",veh:"2023 BMW X6 M50i",t:"8:15",tier:2,score:66,reason:"+$30.6K equity",owner:"Marco Ruiz",roof:"R1",act:"Call"},
+ {name:"Nora Rohde",veh:"2025 BMW X3 30 xDrive",t:"10:30",tier:3,score:48,reason:"New vehicle, monitor",owner:"Priya Nair",roof:"R1",act:"No outreach"},
+ {name:"Wes Oliveira",veh:"2025 BMW 430i Convertible",t:"8:00",tier:3,score:44,reason:"Cash, low mileage",owner:"Marco Ruiz",roof:"R1",act:"No outreach"},
+ {name:"Felix Brandt",veh:"2021 BMW X5 M · 28.5K mi",t:"9:00",tier:2,score:69,reason:"Service-only customer, unscored by equity tool",owner:"Lena Hart",roof:"R2",act:"Activate + call"}
+];
+const DISP=["New","Contacted","Appointment set","Desked","Sold / Acquired","Not now"];
+const DCLS={"New":"","Contacted":"c-ind","Appointment set":"c-acc","Desked":"c-warn","Sold / Acquired":"c-good","Not now":"c-bad"};
+const SRC={camera:{l:"Lane camera",i:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>'},scan:{l:"Mobile scan",i:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 8v8M10 8v8M14 8v8M17 8v8"/></svg>'},checkin:{l:"Check-in / RO",i:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h9"/></svg>'}};
+
+const VIEWS=[
+ {id:"group",l:"Group overview",who:["dp"],i:'<path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/>'},
+ {id:"live-lane",l:"Live lane",who:["dp","mgr","spec","porter"],i:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'},
+ {id:"worklist",l:"Today's worklist",who:["mgr","spec"],i:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'},
+ {id:"customer",l:"Customer 360",who:["mgr","spec"],i:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/>'},
+ {id:"leads",l:"Leads & dispositions",who:["dp","mgr"],i:'<path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/>'},
+ {id:"tomorrow",l:"Tomorrow's prep",who:["mgr","spec"],i:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'},
+ {id:"benchmark",l:"Benchmark",who:["dp","mgr"],i:'<path d="M18 20V10M12 20V4M6 20v-6"/>'},
+ {id:"ask",l:"Ask LaneSight",who:["dp","mgr","spec"],i:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>'},
+ {id:"sources",l:"Data sources",who:["dp","mgr"],i:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>'}
+];
+const PERSONAS=[
+ {id:"dp",l:"Dealer Principal",av:"DP",home:"group",scope:"ALL"},
+ {id:"mgr",l:"Sales manager",av:"SM",home:"leads",scope:"R1"},
+ {id:"spec",l:"Acquisition specialist",av:"AS",home:"worklist",scope:"R1"},
+ {id:"porter",l:"Porter / advisor",av:"PA",home:"live-lane",scope:"R1"}
+];
+let state={persona:"dp",view:"group",scope:"ALL",cust:"o1",leadFilter:"all"};
+try{const s=JSON.parse(localStorage.getItem("ls-state")||"null");if(s&&s.persona){state.persona=s.persona;state.scope=s.scope||state.scope;}}catch(e){}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const money=(n,sign)=>n==null?"—":(n<0?"−$":(sign&&n>0?"+$":"$"))+Math.abs(Math.round(n)).toLocaleString("en-US");
+const k=n=>"$"+(n/1000).toFixed(1)+"K";
+const roof=id=>ROOFS.find(r=>r.id===id);
+const inScope=o=>state.scope==="ALL"||o.roof===state.scope;
+const tier=t=>`<span class="tier t${t}">${t}</span>`;
+const disp=d=>`<span class="chip ${DCLS[d]||""}">${esc(d)}</span>`;
+const scopeName=()=>state.scope==="ALL"?"All 8 rooftops":roof(state.scope).name;
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600);}
+function save(){try{localStorage.setItem("ls-state",JSON.stringify({persona:state.persona,scope:state.scope}))}catch(e){}}
+
+/* ---------- shell ---------- */
+function renderShell(){
+  $("#persona").innerHTML=PERSONAS.map(p=>`<button data-p="${p.id}" class="${p.id===state.persona?"on":""}"><span class="av">${p.av}</span>${p.l}</button>`).join("");
+  const p=state.persona;
+  $("#nav").innerHTML=VIEWS.filter(v=>v.who.includes(p)).map(v=>{
+    let ct="";if(v.id==="live-lane")ct=OPPS.filter(inScope).length;if(v.id==="worklist")ct=OPPS.filter(o=>inScope(o)&&o.tier<=2).length;
+    return `<button data-v="${v.id}" class="${v.id===state.view?"on":""}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${v.i}</svg>${v.l}${ct?`<span class="ct">${ct}</span>`:""}</button>`}).join("");
+  const opts=(p==="dp"?[{id:"ALL",name:"All rooftops (Ortiz Auto Group)"}]:[]).concat(ROOFS.map(r=>({id:r.id,name:r.name+(r.pilot?"  · pilot":"")})));
+  $("#roof").innerHTML=opts.map(o=>`<option value="${o.id}" ${o.id===state.scope?"selected":""}>${esc(o.name)}</option>`).join("");
+}
+function go(v){
+  const allowed=VIEWS.filter(x=>x.who.includes(state.persona)).map(x=>x.id);
+  if(!allowed.includes(v))v=PERSONAS.find(p=>p.id===state.persona).home;
+  state.view=v;renderShell();render();
+  try{if(location.protocol!=="about:"&&location.hash!=="#"+v)history.replaceState(null,"","#"+v)}catch(e){}
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-p]");if(b){const p=PERSONAS.find(x=>x.id===b.dataset.p);state.persona=p.id;state.scope=p.scope==="ALL"?"ALL":(state.scope==="ALL"?p.scope:state.scope);save();go(p.home);return;}
+  const n=e.target.closest("[data-v]");if(n){go(n.dataset.v);return;}
+  const c=e.target.closest("[data-cust]");if(c){state.cust=c.dataset.cust;const o=OPPS.find(x=>x.id===state.cust);if(state.persona==="dp"||state.persona==="porter"){state.persona="spec";}if(o)state.scope=o.roof;save();go("customer");return;}
+  const r=e.target.closest("[data-roof]");if(r){state.scope=r.dataset.roof;save();if(state.persona==="dp"){go("leads")}else go(state.view);return;}
+  const a=e.target.closest("[data-act]");if(a){act(a.dataset.act,a.dataset.id);}
+});
+$("#roof").addEventListener("change",e=>{state.scope=e.target.value;save();renderShell();render();});
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h&&h!==state.view)go(h);});
+
+/* ---------- views ---------- */
+const TITLES={group:["Group overview","Every rooftop under the Ortiz umbrella, one view"],"live-lane":["Live lane","Arrivals identified as they enter the service drive"],worklist:["Today's worklist","Ranked by tier, then score — work from the top"],customer:["Customer 360","Household, garage, equity and service in one card"],leads:["Leads & dispositions","Every lead, owner and outcome — one pane of glass"],tomorrow:["Tomorrow's prep","Pre-visit outreach for tomorrow's appointments"],benchmark:["Benchmark","LaneSight vs. the incumbent equity tool"],ask:["Ask LaneSight","Plain-language questions over governed data"],sources:["Data sources","Ingestion health across 8 source systems"]};
+function render(){
+  const [t,s]=TITLES[state.view];$("#vt").textContent=t;$("#vs").textContent=s+" · "+scopeName();
+  const fn={group:vGroup,"live-lane":vLane,worklist:vWork,customer:vCust,leads:vLeads,tomorrow:vTom,benchmark:vBench,ask:vAsk,sources:vSrc}[state.view];
+  $("#content").innerHTML=`<div class="view">${fn()}</div>`;
+  if(state.view==="ask")bindAsk();
+}
+
+function roofs(){return state.scope==="ALL"?ROOFS:[roof(state.scope)];}
+function sum(f){return roofs().reduce((a,r)=>a+r[f],0)}
+
+function vGroup(){
+  const R=roofs(), arr=sum("arr"), t12=sum("t12"), appt=sum("appt"), acq=sum("acq"), sold=sum("sold"), gross=sum("gross"), idle=sum("idle");
+  const c60=Math.round(R.reduce((a,r)=>a+r.c60*r.t12,0)/t12);
+  const maxG=Math.max(...ROOFS.map(r=>r.gross));
+  const rows=[...R].sort((a,b)=>b.gross-a.gross).map(r=>{
+    const conv=Math.round((r.acq+r.sold)/r.t12*100);
+    const flag=r.c60<60||r.idle>=5?`<span class="chip c-bad">Needs attention</span>`:r.c60>=80?`<span class="chip c-good">On track</span>`:`<span class="chip c-warn">Watch</span>`;
+    return `<tr class="click" data-roof="${r.id}"><td><span class="name">${esc(r.name)}</span><span class="s">${r.brand}${r.pilot?" · pilot":" · target state"}${r.cam?" · lane cameras":""}</span></td>
+    <td class="n">${r.arr}</td><td class="n">${r.t12}</td><td class="n ${r.c60>=80?"up":r.c60<60?"dn":""}">${r.c60}%</td><td class="n">${r.appt}</td><td class="n">${r.acq}</td><td class="n">${r.sold}</td><td class="n">${conv}%</td><td class="n">${k(r.gross)}</td><td class="n ${r.idle>=5?"dn":""}">${r.idle}</td><td>${flag}</td></tr>`}).join("");
+  const bars=[...ROOFS].sort((a,b)=>b.gross-a.gross).map(r=>`<div class="bar"><span class="lbl">${esc(r.short)}</span><div class="t"><div class="f ${r.pilot?"":"alt"}" style="width:${(r.gross/maxG*100).toFixed(1)}%"></div></div><span class="v">${k(r.gross)}</span></div>`).join("");
+  const top=OPPS.filter(o=>inScope(o)&&o.tier===1).sort((a,b)=>b.score-a.score).slice(0,6).map(o=>`<tr class="click" data-cust="${o.id}"><td>${tier(o.tier)}</td><td><span class="name">${esc(o.name)}</span><span class="s">${esc(o.veh)}</span></td><td>${esc(roof(o.roof).short)}</td><td>${esc(o.reasons[0])}</td><td>${esc(o.owner)}</td><td>${disp(o.disp)}</td></tr>`).join("");
+  const funnel=[["Arrivals",arr],["Tier 1–2 leads",t12],["Contacted",Math.round(t12*c60/100)],["Appointments",appt],["Won MTD",acq+sold]];
+  return `
+  <div class="banner"><span>ℹ</span><div><b>Dealer Principal view.</b> One umbrella over every rooftop: how many service visits became opportunities, how fast each store responds, and what that is worth. Click a rooftop to drill into its leads. <span class="note">Month to date, Nov 1–10.</span></div></div>
+  <div class="kpis">
+    <div class="kpi"><span class="l">Service arrivals today</span><span class="v">${arr}</span><span class="d">${R.filter(r=>r.cam).length} rooftop(s) on lane cameras</span></div>
+    <div class="kpi"><span class="l">Open Tier 1–2 leads</span><span class="v">${t12}</span><span class="d">${Math.round(t12/arr*100)}% of arrivals</span></div>
+    <div class="kpi"><span class="l">Contacted &lt; 60 min</span><span class="v ${c60>=75?"up":"wn"}">${c60}%</span><span class="d">target 90% for Tier 1</span></div>
+    <div class="kpi"><span class="l">Acquired MTD</span><span class="v">${acq}</span><span class="d">used units from service</span></div>
+    <div class="kpi"><span class="l">Gross from service-to-sales</span><span class="v">${k(gross)}</span><span class="d up">▲ 18% vs Oct same period</span></div>
+    <div class="kpi"><span class="l">Leads idle &gt; 24 h</span><span class="v ${idle>10?"dn":""}">${idle}</span><span class="d">auto-escalated to managers</span></div>
+  </div>
+  <div class="panel"><div class="ph"><h2>Rooftop scorecard</h2><span class="hint">Sorted by gross. Click a row to open that rooftop's leads.</span></div>
+   <div class="tw"><table><thead><tr><th>Rooftop</th><th class="n">Arrivals</th><th class="n">T1–2</th><th class="n">&lt;60 min</th><th class="n">Appts</th><th class="n">Acquired</th><th class="n">Sold</th><th class="n">Conv.</th><th class="n">Gross MTD</th><th class="n">Idle</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+  <div class="grid g-wide">
+   <div class="panel"><div class="ph"><h2>Gross from service-to-sales, by rooftop</h2><span class="hint"><span class="chip c-acc">pilot</span> <span class="chip c-ind">target state</span></span></div><div class="pb bars">${bars}</div></div>
+   <div class="panel"><div class="ph"><h2>Group funnel</h2><span class="hint">today's leads · wins month to date</span></div><div class="pb fun">${funnel.map(([l,v])=>`<div class="row"><span>${l}</span><div class="t"><div class="f" style="width:${(v/funnel[0][1]*100).toFixed(1)}%"></div></div><span class="v">${v}</span></div>`).join("")}
+     <p class="note" style="margin:8px 0 0">${Math.round((acq+sold)/t12*100)}% of Tier 1–2 leads converted. Worst drop-off: contact → appointment.</p></div></div>
+  </div>
+  <div class="grid g2">
+   <div class="panel"><div class="ph"><h2>Top Tier 1 opportunities across the group</h2></div><div class="tw"><table><thead><tr><th></th><th>Customer · vehicle</th><th>Rooftop</th><th>Why</th><th>Owner</th><th>Status</th></tr></thead><tbody>${top||'<tr><td colspan="6" class="note">No Tier 1 opportunities in this scope today.</td></tr>'}</tbody></table></div></div>
+   <div class="panel"><div class="ph"><h2>Where the Principal should look</h2></div><div class="pb" style="display:grid;gap:10px">
+     <div class="talk" style="border-color:var(--bad);background:var(--bad-soft)"><b>Toyota Westfield:</b> 52% contacted within an hour and 8 idle leads. More arrivals than BMW Ridgeline (66 vs 52) but 37% less gross.</div>
+     <div class="talk" style="border-color:var(--warn);background:var(--warn-soft)"><b>Equity data:</b> ${sum("eqFlag")} vehicles where the incumbent tool's equity is off by more than $2,500 from contract math. Desks are quoting from LaneSight figures.</div>
+     <div class="talk"><b>BMW Ridgeline:</b> lane cameras alert owners a median of 6 minutes before the RO opens; contact rate 83%. Candidate template for the other rooftops.</div>
+   </div></div>
+  </div>
+  <p class="note">Illustrative figures for a target-state group view. Pilot rooftops are marked; the others show how the same model scales under one umbrella.</p>`;
+}
+
+function vLane(){
+  const ev=OPPS.filter(inScope).sort((a,b)=>tmin(b.arr)-tmin(a.arr));
+  const feed=ev.map(o=>evRow(o)).join("");
+  const r=state.scope==="ALL"?null:roof(state.scope);
+  const counts={camera:0,scan:0,checkin:0};ev.forEach(o=>counts[o.src]++);
+  return `
+  <div class="grid g-wide">
+   <div class="panel"><div class="ph"><h2>Arrivals today</h2><span class="hint">Newest first · ${ev.length} identified</span><div class="r"><span class="chip">${SRC.camera.i} camera ${counts.camera}</span><span class="chip">${SRC.scan.i} scan ${counts.scan}</span><span class="chip">${SRC.checkin.i} check-in ${counts.checkin}</span></div></div>
+    <div class="feed" id="feed">${feed}</div></div>
+   <div style="display:grid;gap:16px;align-content:start">
+    <div class="panel"><div class="ph"><h2>Scan an arrival</h2><span class="hint">Porter / advisor phone</span></div><div class="pb">
+     <div class="phone"><div class="scr"><div class="cam"><div class="frm"><div class="bc"></div></div><div class="ln"></div><div class="h">Align door-jamb VIN barcode</div></div>
+      <div class="in"><div class="seg" role="tablist"><button class="on" type="button">VIN barcode</button><button type="button">Plate</button><button type="button">Type</button></div>
+      <label class="note" for="vin">VIN (camera fills this in)</label><input id="vin" value="WBA73BJ04MWW97690" autocomplete="off">
+      <button class="btn p" data-act="scan" type="button">Identify &amp; score</button></div></div></div>
+     <p class="note" style="margin:10px 0 0">Runs in the phone browser, no app install. A camera partner (e.g., SKAIVISION) sends the same arrival event automatically where lane cameras exist.</p></div></div>
+    <div class="panel"><div class="ph"><h2>Arrival → alert</h2></div><div class="pb kv">
+      <span>Median, lane camera</span><b>38 s</b><span>Median, mobile scan</span><b>11 s</b><span>Median, check-in event</span><b>4 min 20 s</b><span>Alerted before RO opened</span><b>${r&&!r.cam?"— (no cameras)":"71%"}</b><span>Unknown vehicles today</span><b>3 · sent to review</b></div></div>
+   </div>
+  </div>`;
+}
+function tmin(t){const [h,m]=t.split(":").map(Number);return (h<6?h+12:h)*60+m}
+function evRow(o,isNew){
+  const s=SRC[o.src];const alert=o.tier<=2?`<span class="chip c-acc">Alerted ${esc(o.owner.split(" ")[0])}</span>`:`<span class="chip">Worklist only</span>`;
+  return `<div class="ev ${isNew?"new":""}"><span class="tm">${o.arr}</span><span class="src" title="${s.l}">${s.i}</span>
+  <div style="min-width:0"><div><span class="who">${esc(o.name)}</span> ${tier(o.tier)}</div><div class="meta">${esc(o.veh)} · ${s.l} · ${esc(roof(o.roof).short)} · ${esc(o.reasons[0])}</div></div>
+  <div class="act">${alert}<button class="btn" data-cust="${o.id}" type="button">Open 360</button></div></div>`;
+}
+
+function vWork(){
+  const L=OPPS.filter(inScope).sort((a,b)=>a.tier-b.tier||b.score-a.score);
+  const rows=L.map(o=>`<tr class="click" data-cust="${o.id}"><td>${tier(o.tier)}</td><td class="n" style="font-weight:600">${o.score}</td>
+  <td><span class="name">${esc(o.name)}</span><span class="s">${esc(o.veh)} · ${o.mi.toLocaleString()} mi</span></td>
+  <td>${o.reasons.slice(0,2).map(r=>`<span class="reason">${esc(r)}</span>`).join("")}</td>
+  <td class="n ${o.lsEq>0?"up":o.lsEq<0?"dn":""}">${money(o.lsEq,true)}</td>
+  <td><span class="s" style="color:var(--fg2)">${esc(o.insp)}</span></td><td>${esc(o.owner)}</td><td>${disp(o.disp)}</td></tr>`).join("");
+  const t1=L.filter(o=>o.tier===1).length,t2=L.filter(o=>o.tier===2).length;
+  return `
+  <div class="kpis">
+   <div class="kpi"><span class="l">In the lane now</span><span class="v">${L.length}</span><span class="d">identified on arrival</span></div>
+   <div class="kpi"><span class="l">Tier 1</span><span class="v" style="color:var(--accent)">${t1}</span><span class="d">contact before they leave</span></div>
+   <div class="kpi"><span class="l">Tier 2</span><span class="v" style="color:var(--accent2)">${t2}</span><span class="d">contact today</span></div>
+   <div class="kpi"><span class="l">Positive equity</span><span class="v">${L.filter(o=>o.lsEq>0).length}</span><span class="d">verified payoff</span></div>
+   <div class="kpi"><span class="l">Inspection pending</span><span class="v">${L.filter(o=>/progress/i.test(o.insp)).length}</span><span class="d">hold the quote</span></div>
+   <div class="kpi"><span class="l">Equity gaps flagged</span><span class="v wn">${L.filter(o=>o.incEq!=null&&o.lsEq!=null&&Math.abs(o.lsEq-o.incEq)>2500).length}</span><span class="d">vs incumbent &gt; $2,500</span></div>
+  </div>
+  <div class="panel"><div class="ph"><h2>Priority worklist</h2><span class="hint">Click a row for the Customer 360. Equity uses repair-order mileage and contract payoff.</span></div>
+   <div class="tw"><table><thead><tr><th>Tier</th><th class="n">Score</th><th>Customer · vehicle</th><th>Reason codes</th><th class="n">Equity</th><th>Inspection</th><th>Owner</th><th>Disposition</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+function vCust(){
+  const o=OPPS.find(x=>x.id===state.cust)||OPPS[0];const R=roof(o.roof);
+  const initials=o.name.split(" ").map(w=>w[0]).slice(0,2).join("");
+  let garage, equity, mpi, tl, talk, camp="";
+  if(o.case==="C"){
+    garage=[["1990 BMW M3 (E30)","Collector · 38.9K mi · in today",true],["1972 BMW 3.0 CSL","Collector · stored"],["2003 BMW Z8","Collector · 9.2K mi"],["2024 BMW M8 Competition","Daily · 12.1K mi"],["2021 BMW X5 xDrive40i","Spouse · 52.3K mi"],["2023 BMW X3 M40i","Daughter · 21.0K mi"],["2019 MINI Cooper S","Son · 48.7K mi"],["2022 BMW i4 M50","Lease · ends Mar 2027"],["2020 BMW M2 CS","Collector · 6.4K mi"]];
+    equity=`<div class="banner"><div><b>Relationship view.</b> Collector vehicles are tracked, not worked as trade-ins. Next likely replacements: the spouse's 2021 X5 at 52.3K mi (out of warranty) and the i4 lease ending March 2027.</div></div>`;
+    mpi=`<p class="note" style="margin:0">1990 M3 in for annual service. No inspection required for collector vehicles.</p>`;
+    tl=[["Today","a","Arrived 8:15 · greeted by relationship owner"],["Oct 2026","b","Service visit · 2021 X5 brakes, $1,480 customer-pay"],["Jun 2026","a","Purchased 2024 M8 Competition"],["2019–2025","b","7 vehicles bought or leased across the household"]];
+    talk="Welcome back. While the M3 is in, the X5 just passed 50K and its factory warranty. Would you like options for her next car, or a lease-end plan for the i4?";
+  } else {
+    const g=[[o.veh,`${o.mi.toLocaleString()} mi · in today`,true]];
+    if(o.case==="A")g.push(["2023 MINI Countryman","Spouse · 18.4K mi"]);
+    if(o.case==="B")g.push(["2020 BMW 330i","Son · 61.0K mi"]);
+    garage=g;
+    if(o.case==="A"){
+      equity=`<div class="compare">
+       <div class="cbox inc"><h3>Incumbent equity tool</h3><div class="kv"><span>Mileage</span><b>20,000 (placeholder)</b><span>Payoff</span><b>$67,800</b><span>Trade value</span><b>$33,829</b><span>Equity</span><b class="dn">−$33,971</b><span>New X7 payment</span><b>+$337/mo</b></div></div>
+       <div class="cbox ls"><h3>LaneSight</h3><div class="kv"><span>Mileage (RO, today)</span><b>70,473</b><span>Payoff (contract math)</span><b>$44,857</b><span>Trade value (desk ACV)</span><b>$36,000</b><span>Equity</span><b class="wn">−$8,857</b><span>New X7 payment</span><b class="up">+$105/mo</b></div></div></div>
+       <div class="formula">Payoff = $1,487.88 × (1 − 1.005408<sup>−33</sup>) / 0.005408 ≈ $44,857 · $107,127 financed, 6.49% APR, 72 mo, 39 paid<br>Gap vs incumbent: $25,114 → flagged (threshold $2,500)</div>`;
+      tl=[["7:38","a","Lane camera identified vehicle · Tier 1 alert to Dana"],["7:42","b","RO 438647 opened · advisor S. James"],["12:01","c","Proposal emailed · 2027 X7, 72 mo, $1,593/mo"],["12:24","b","Customer text: wants to stay near current payment"],["13:27","a","Inspection complete · all pass, tires 8/32"],["5 days ago","b","Voicemail left (CRM)"]];
+      talk="Your X7 just passed 70,000 miles, so the factory warranty is behind you, and today's visit was about $1,900. With your current payoff, a new 2027 X7 is about $105 a month more than you pay now, with full warranty.";
+      mpi=gauges([92,90,88,85])+`<p class="note" style="margin:8px 0 0">Customer-pay today: 2 tires $1,239.91 · alignment $265.86 · coolant flush $372.12 · total $1,915. Clean trade candidate.</p>`;
+    } else {
+      equity=`<div class="kv"><span>Mileage (RO)</span><b>${o.mi.toLocaleString()}</b><span>Deal type</span><b>${esc(o.deal)}</b><span>Equity (LaneSight)</span><b class="${o.lsEq>0?"up":"dn"}">${money(o.lsEq,true)}</b><span>Equity (incumbent)</span><b>${o.incEq==null?"not scored":money(o.incEq,true)}</b></div>`;
+      tl=[[o.arr,"a",`Arrived · ${SRC[o.src].l}`],["Today","b",o.last],["Last month","c","Campaign email (incumbent tool)"]];
+      talk=`${o.reasons[0]}. ${o.reasons[1]||""}`;
+      mpi=/fail/i.test(o.insp)?gauges([35,40,22,48]):gauges([78,74,70,82]);
+      mpi+=`<p class="note" style="margin:8px 0 0">Inspection: ${esc(o.insp)}.</p>`;
+    }
+    if(o.case==="B"){camp=`<div class="panel"><div class="ph"><h2>Campaign history (incumbent tool)</h2><span class="hint">14 monthly emails, Sep 2025 – Oct 2026, no opens recorded</span></div><div class="pb"><div class="talk" style="border-color:var(--warn);background:var(--warn-soft)">LaneSight suppressed further mass campaigns and routed to a named owner for a personal call before tomorrow's visit.</div></div></div>`;
+      tl=[["8:02","a","Scanned by porter · Tier 1 alert to Marco"],["8:20","b","Text: 'Thanks, can we talk at 10?'"],["9:05","a","Appointment set · 10:30 test drive 2027 X7"],["Sep 2025–Oct 2026","c","14 campaign emails, no response"]];
+      talk="Your X7 is paid off and worth about $33,700. A 2027 X7 on 60 months at 0.9% would cost about $194 a month less than your last payment did, with loyalty incentives applied.";}
+  }
+  const gar=garage.map(g=>`<div class="car ${g[2]?"sel":""}"><b>${esc(g[0])}</b><span>${esc(g[1])}</span></div>`).join("");
+  return `
+  <div class="panel"><div class="pb hero"><div class="av">${esc(initials)}</div><div style="min-width:0"><h2>${esc(o.name)}</h2><div class="meta">${esc(R.name)} · Owner ${esc(o.owner)} · DMS #96${o.id.slice(1).padStart(5,"4")} · Arrived ${o.arr} via ${SRC[o.src].l.toLowerCase()}</div></div>
+   <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${tier(o.tier)}<span class="chip">Score ${o.score}</span>${disp(o.disp)}<button class="btn" data-act="crm" type="button">Open in CRM</button><button class="btn p" data-act="log" data-id="${o.id}" type="button">Log outcome</button></div></div></div>
+  <div class="panel"><div class="ph"><h2>Household garage</h2><span class="hint">${garage.length} vehicle${garage.length>1?"s":""} resolved to one household</span></div><div class="pb garage">${gar}</div></div>
+  <div class="grid g2">
+   <div class="panel"><div class="ph"><h2>Why now</h2></div><div class="pb" style="display:grid;gap:10px"><div>${o.reasons.map(r=>`<span class="reason">${esc(r)}</span>`).join("")}</div><div class="talk"><b>Talk track</b><br>${esc(talk)}</div></div></div>
+   <div class="panel"><div class="ph"><h2>Equity</h2><span class="hint">Every figure shows its source</span></div><div class="pb" style="display:grid;gap:10px">${equity}</div></div>
+  </div>
+  <div class="grid g2">
+   <div class="panel"><div class="ph"><h2>Service & inspection</h2><span class="hint">${esc(o.insp)}</span></div><div class="pb">${mpi}</div></div>
+   <div class="panel"><div class="ph"><h2>Timeline · service, CRM, campaigns</h2></div><div class="pb tl">${tl.map(t=>`<div class="it"><span class="w">${esc(t[0])}</span><span class="d ${t[1]}"></span><span>${esc(t[2])}</span></div>`).join("")}</div></div>
+  </div>${camp}`;
+}
+function gauges(v){const L=["Front tires","Rear tires","Front brakes","Rear brakes"];return `<div class="mpi">${v.map((x,i)=>`<div class="gauge"><span>${L[i]} · ${x}%</span><div class="t"><div class="f" style="width:${x}%;background:${x<25?"var(--bad)":x<50?"var(--warn)":"var(--good)"}"></div></div></div>`).join("")}</div>`;}
+
+function vLeads(){
+  let L=OPPS.filter(inScope);
+  const f=state.leadFilter;if(f==="idle")L=L.filter(o=>o.idle>=24);else if(f!=="all")L=L.filter(o=>o.disp===f);
+  const all=OPPS.filter(inScope);
+  const cnt=d=>all.filter(o=>o.disp===d).length;
+  const contacted=all.filter(o=>o.disp!=="New").length;
+  const rows=L.sort((a,b)=>a.tier-b.tier||b.idle-a.idle).map(o=>`<tr class="click" data-cust="${o.id}"><td>${tier(o.tier)}</td><td><span class="name">${esc(o.name)}</span><span class="s">${esc(o.veh)}</span></td>${state.scope==="ALL"?`<td>${esc(roof(o.roof).short)}</td>`:""}<td>${esc(o.reasons[0])}</td><td>${o.oem?'<span class="chip c-ind">OEM</span>':SRC[o.src].l}</td><td>${esc(o.owner)}</td><td class="${o.idle>=24?"dn":""}">${o.idle>=24?`None · ${o.idle} h`:esc(o.last)}</td><td>${disp(o.disp)}</td></tr>`).join("");
+  const owners={};all.forEach(o=>{owners[o.owner]=owners[o.owner]||{a:0,c:0};owners[o.owner].a++;if(o.disp!=="New")owners[o.owner].c++;});
+  const ol=Object.entries(owners).sort((a,b)=>b[1].a-a[1].a).map(([n,v])=>`<div class="bar"><span class="lbl">${esc(n)}</span><div class="t"><div class="f" style="width:${v.c/v.a*100}%"></div></div><span class="v ${v.c/v.a<.5?"dn":""}">${v.c} / ${v.a}</span></div>`).join("");
+  const filters=[["all","All"],["New","New"],["Contacted","Contacted"],["Appointment set","Appt set"],["Desked","Desked"],["Sold / Acquired","Won"],["idle","Idle > 24 h"]];
+  const stages=[["New",all.length],["Contacted",contacted],["Appt set",cnt("Appointment set")+cnt("Desked")+cnt("Sold / Acquired")],["Desked",cnt("Desked")+cnt("Sold / Acquired")],["Sold / acquired",cnt("Sold / Acquired")]];
+  return `
+  <div class="kpis">
+   <div class="kpi"><span class="l">Open leads</span><span class="v">${all.length}</span><span class="d">service, CRM and OEM</span></div>
+   <div class="kpi"><span class="l">Contacted</span><span class="v">${Math.round(contacted/all.length*100)}%</span><span class="d">${contacted} of ${all.length}</span></div>
+   <div class="kpi"><span class="l">Appointments</span><span class="v">${cnt("Appointment set")}</span><span class="d">set today</span></div>
+   <div class="kpi"><span class="l">Desked</span><span class="v">${cnt("Desked")}</span><span class="d">awaiting decision</span></div>
+   <div class="kpi"><span class="l">Sold / acquired</span><span class="v up">${cnt("Sold / Acquired")}</span><span class="d">today</span></div>
+   <div class="kpi"><span class="l">Idle &gt; 24 h</span><span class="v ${all.some(o=>o.idle>=24)?"dn":""}">${all.filter(o=>o.idle>=24).length}</span><span class="d">escalated</span></div>
+  </div>
+  <div class="grid g-wide">
+   <div class="panel"><div class="ph"><h2>Every lead and its disposition</h2><div class="r"><div class="seg">${filters.map(([v,l])=>`<button type="button" class="${state.leadFilter===v?"on":""}" data-act="lf" data-id="${v}">${l}</button>`).join("")}</div></div></div>
+    <div class="tw"><table><thead><tr><th></th><th>Customer · vehicle</th>${state.scope==="ALL"?"<th>Rooftop</th>":""}<th>Top reason</th><th>Source</th><th>Owner</th><th>Last activity</th><th>Disposition</th></tr></thead><tbody>${rows||`<tr><td colspan="8" class="note">No leads match this filter.</td></tr>`}</tbody></table></div></div>
+   <div style="display:grid;gap:16px;align-content:start">
+    <div class="panel"><div class="ph"><h2>Disposition funnel</h2></div><div class="pb fun">${stages.map(([l,v])=>`<div class="row"><span>${l}</span><div class="t"><div class="f" style="width:${all.length?(v/all.length*100).toFixed(1):0}%"></div></div><span class="v">${v}</span></div>`).join("")}</div></div>
+    <div class="panel"><div class="ph"><h2>By owner</h2><span class="hint">contacted / assigned</span></div><div class="pb bars">${ol}</div></div>
+    <div class="panel"><div class="ph"><h2>CRM sync</h2></div><div class="pb kv"><span>CRM</span><b>DriveCentric</b><span>Last activity sync</span><b>3 min ago</b><span>Status codes mapped</span><b>14 of 14</b><span>Write-back</span><b>Phase 2</b></div></div>
+   </div>
+  </div>`;
+}
+
+function vTom(){
+  const L=TOMORROW.filter(t=>state.scope==="ALL"||t.roof===state.scope).sort((a,b)=>a.tier-b.tier||b.score-a.score);
+  const rows=L.map(t=>`<tr><td>${tier(t.tier)}</td><td class="n">${t.score}</td><td><span class="name">${esc(t.name)}</span><span class="s">${esc(t.veh)}</span></td><td>${t.t}</td><td>${esc(t.reason)}</td><td>${esc(t.owner)}</td><td>${t.tier<=2?`<span class="chip c-acc">${esc(t.act)}</span>`:`<span class="chip">${esc(t.act)}</span>`}</td></tr>`).join("");
+  return `
+  <div class="banner"><div><b>Replaces the afternoon filter-and-sort.</b> Tomorrow's appointments arrive pre-scored with verified equity and an owner, so pre-visit calls start at 2 PM instead of after a manual sort by trade value.</div></div>
+  <div class="panel"><div class="ph"><h2>Tomorrow · Wed Nov 11</h2><span class="hint">${L.length} scored appointments · house accounts reassigned to named owners</span></div>
+  <div class="tw"><table><thead><tr><th>Tier</th><th class="n">Score</th><th>Customer · vehicle</th><th>Appt</th><th>Why</th><th>Owner</th><th>Action</th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="note">No scored appointments for tomorrow in this scope.</td></tr>'}</tbody></table></div></div>`;
+}
+
+function vBench(){
+  const B=[["Equity within $2,500 of desk",91,38,"%"],["Valued on actual odometer",100,22,"%"],["Appointments scored",97,64,"%"],["Tier 1–2 with a named owner",100,58,"%"],["Household vehicles surfaced",94,46,"%"]];
+  const rows=B.map(([l,a,b,u])=>`<div style="display:grid;gap:4px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${l}</span><span class="note">LaneSight <b style="color:var(--accent)">${a}${u}</b> · incumbent <b>${b}${u}</b></span></div>
+   <div class="bar" style="grid-template-columns:80px minmax(0,1fr) 44px"><span class="note">LaneSight</span><div class="t"><div class="f" style="width:${a}%"></div></div><span class="v">${a}${u}</span></div>
+   <div class="bar" style="grid-template-columns:80px minmax(0,1fr) 44px"><span class="note">Incumbent</span><div class="t"><div class="f" style="width:${b}%;background:var(--fg3)"></div></div><span class="v">${b}${u}</span></div></div>`).join("");
+  return `
+  <div class="grid g-wide">
+   <div class="panel"><div class="ph"><h2>Weekly scorecard · pilot rooftops</h2><span class="hint">Week 3 of side-by-side run</span></div><div class="pb" style="display:grid;gap:14px">${rows}</div></div>
+   <div style="display:grid;gap:16px;align-content:start">
+    <div class="panel"><div class="ph"><h2>Speed to contact</h2></div><div class="pb kv"><span>Arrival → first contact, LaneSight</span><b class="up">22 min</b><span>Arrival → first proposal, before</span><b class="dn">4 h 23 min</b><span>Tier 1–2 conversion, LaneSight</span><b>27%</b><span>Incumbent top-scored, same period</span><b>16%</b></div></div>
+    <div class="panel"><div class="ph"><h2>Keep, rebuild or retire</h2></div><div class="tw"><table><tbody>
+     <tr><td>Equity &amp; payoff</td><td><span class="chip c-acc">Rebuild</span></td></tr><tr><td>Mileage</td><td><span class="chip c-acc">Rebuild</span></td></tr><tr><td>Propensity score</td><td><span class="chip c-warn">Pull, compare</span></td></tr><tr><td>Incentive scenarios</td><td><span class="chip c-warn">Pull</span></td></tr><tr><td>Household / garage</td><td><span class="chip c-good">Build new</span></td></tr><tr><td>Arrival alerts</td><td><span class="chip c-acc">Rebuild</span></td></tr></tbody></table></div></div>
+   </div>
+  </div><p class="note">Illustrative benchmark figures; real targets are agreed in discovery.</p>`;
+}
+
+const QA=[
+ {q:"Paid-off vehicles in service this week with over $20K equity",sql:"SELECT customer, vehicle, rooftop, equity, appt_date, owner\nFROM REF_OPPORTUNITY\nWHERE contract_status = 'PAID_OFF'\n  AND equity_usd > 20000\n  AND appt_date BETWEEN '2026-11-09' AND '2026-11-15'\nORDER BY equity_usd DESC;",rows:[["Margaret Hartwell","2022 BMW X7","BMW Ridgeline","+$33,732","Tue"],["Laura Kim","2022 Lexus RX 350","Lexus Stonebridge","+$21,900","Tue"],["Joseph Ramsey","2022 BMW X7","BMW Ridgeline","+$33,732","Wed"]],h:["Customer","Vehicle","Rooftop","Equity","Visit"]},
+ {q:"Which rooftops left the most Tier 1 leads uncontacted after an hour?",sql:"SELECT rooftop, COUNT(*) AS tier1_late\nFROM REF_OPPORTUNITY\nWHERE tier = 1 AND minutes_to_first_contact > 60\n  AND arrival_date >= DATE_TRUNC('month', CURRENT_DATE)\nGROUP BY rooftop ORDER BY tier1_late DESC;",rows:[["Toyota Westfield","9"],["Mercedes Harbor Pt","6"],["Honda Westfield","5"],["BMW North Shore","3"]],h:["Rooftop","Tier 1 late (MTD)"]},
+ {q:"Households with 3+ vehicles that visited service this month",sql:"SELECT household, vehicles, rooftop, owner\nFROM REF_HOUSEHOLD_360\nWHERE vehicle_count >= 3 AND last_service_date >= '2026-11-01'\nORDER BY vehicle_count DESC;",rows:[["Varga household","9","BMW Ridgeline","Priya Nair"],["Okoro household","4","MINI Ridgeline","Sam Tillman"],["Castellano household","3","BMW Ridgeline","Dana Whitfield"]],h:["Household","Vehicles","Rooftop","Owner"]}
+];
+function vAsk(){
+  return `<div class="panel ask"><div class="ph"><h2>Ask a question</h2><span class="hint">Answers come from governed tables only; the SQL is shown for review</span></div><div class="pb" style="display:grid;gap:10px">
+   <label class="note" for="askq">Question</label><textarea id="askq">${esc(QA[0].q)}</textarea>
+   <div class="sugg">${QA.map((x,i)=>`<button class="btn" type="button" data-act="ask" data-id="${i}">${esc(x.q)}</button>`).join("")}</div>
+   <div><button class="btn p" type="button" data-act="ask" data-id="run">Ask</button></div></div></div>
+  <div id="ans"></div>`;
+}
+function bindAsk(){showAns(0);}
+function showAns(i){const x=QA[i];$("#ans").innerHTML=`<div class="grid g2"><div class="panel"><div class="ph"><h2>Answer</h2><span class="hint">${x.rows.length} rows</span></div><div class="tw"><table><thead><tr>${x.h.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${x.rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div><div class="panel"><div class="ph"><h2>Generated SQL</h2><span class="hint">Snowflake Cortex</span></div><div class="pb"><div class="sql">${esc(x.sql)}</div></div></div></div>`;}
+
+function vSrc(){
+  const S=[["DMS","CDK","Customers, contracts, ROs, appointments","15 min","2 min ago","ok"],["Service lane","myKaarma","Check-in, inspections, customer-pay","15 min","4 min ago","ok"],["CRM","DriveCentric","Leads, activities, desked deals","15 min","3 min ago","ok"],["Equity tool","automotiveMastermind","Scores, campaigns (benchmark)","Daily","06:10","ok"],["Inventory","VinCue","Inventory, appraisals, market","Daily","05:45","ok"],["Book values","Galves","Trade / wholesale by VIN","Daily","05:30","ok"],["OEM","OEM portal (e.g., Netstar)","Incentives, eligibility, OEM leads","Daily","Phase 2","p2"],["Lender / F&I","Dealertrack","Contract terms, payoff quotes","Daily","05:50","warn"],["Arrival events","Camera partner + mobile scan","Plate / VIN arrivals","Real time","38 s ago","ok"]];
+  const st={ok:'<span class="chip c-good">Healthy</span>',warn:'<span class="chip c-warn">1 test failing</span>',p2:'<span class="chip">Phase 2</span>'};
+  return `<div class="panel"><div class="ph"><h2>Source systems</h2><span class="hint">Read-only in the pilot · vendors shown are examples of each category</span></div><div class="tw"><table><thead><tr><th>Category</th><th>System</th><th>Data</th><th>Cadence</th><th>Last load</th><th>Status</th></tr></thead><tbody>${S.map(s=>`<tr><td class="name">${s[0]}</td><td>${s[1]}</td><td>${s[2]}</td><td>${s[3]}</td><td>${s[4]}</td><td>${st[s[5]]}</td></tr>`).join("")}</tbody></table></div></div>
+  <div class="grid g3">
+   <div class="panel"><div class="ph"><h2>Data-quality checks</h2></div><div class="pb kv"><span>Placeholder mileage blocked</span><b>1,284 rows</b><span>Duplicate VINs merged</span><b>37</b><span>Stale payoff (&gt; 30 days)</span><b class="wn">1 failing</b></div></div>
+   <div class="panel"><div class="ph"><h2>Identity resolution</h2></div><div class="pb kv"><span>Customers resolved</span><b>48,210</b><span>Households</span><b>31,904</b><span>In review queue</span><b>212</b></div></div>
+   <div class="panel"><div class="ph"><h2>Layers</h2></div><div class="pb kv"><span>Landing</span><b>LND_ · 9 sources</b><span>Conformed</span><b>CNF_ · 9 entities</b><span>Refined</span><b>REF_ · 4 marts</b></div></div>
+  </div>`;
+}
+
+/* ---------- actions ---------- */
+let scanN=0;
+function act(a,id){
+  if(a==="lf"){state.leadFilter=id;render();return;}
+  if(a==="crm"){toast("Opens the customer's record in the CRM (DriveCentric in this pilot).");return;}
+  if(a==="log"){const o=OPPS.find(x=>x.id===id);const i=DISP.indexOf(o.disp);o.disp=DISP[Math.min(i+1,4)];o.last="Logged · just now";o.idle=0;toast(`Outcome logged: ${o.disp}. Synced to the manager view.`);render();return;}
+  if(a==="ask"){const i=id==="run"?Math.max(0,QA.findIndex(x=>x.q===$("#askq").value.trim())):Number(id);if(id!=="run")$("#askq").value=QA[i].q;showAns(i);return;}
+  if(a==="scan"){
+    const vin=($("#vin").value||"").trim().toUpperCase();
+    if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)){toast("That isn't a valid 17-character VIN. Rescan or type it.");return;}
+    scanN++;const now=new Date();const t=`${((now.getHours()+11)%12)+1}:${String(now.getMinutes()).padStart(2,"0")}`;
+    const r=state.scope==="ALL"?"R1":state.scope;
+    const o={id:"s"+scanN,name:scanN===1?"Victor Lindqvist (repeat visit)":"New customer · review",veh:scanN===1?"2021 BMW 5 Series 540i xDrive":"Vehicle from VIN "+vin.slice(-6),mi:50115,roof:r,tier:scanN===1?2:3,score:scanN===1?70:45,reasons:scanN===1?["Matches used-inventory gap","+$6.2K equity"]:["Unknown vehicle · sent to review"],owner:OWNERS[r][0],src:"scan",arr:t,status:"Arrived",insp:"Not started",lsEq:scanN===1?6240:null,incEq:null,disp:"New",last:"None",idle:0,deal:"Finance"};
+    OPPS.push(o);toast(o.tier<=2?`Identified in 1.4 s · Tier ${o.tier} · ${o.owner} alerted`:"No match · created a review record");
+    renderShell();const f=$("#feed");if(f)f.insertAdjacentHTML("afterbegin",evRow(o,true));
+  }
+}
+
+/* ---------- boot ---------- */
+let h="";try{h=location.hash.slice(1)}catch(e){}
+renderShell();go(h||PERSONAS.find(p=>p.id===state.persona).home);
+})();
+</script>
+</body></html>
