@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaneSight — Service-to-Sales Acquisition Intelligence</title>
+<meta name="description" content="LaneSight spec: turning every service-lane visit into a ranked, explained acquisition opportunity. Ortiz Auto Group pilot.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0f1c; --bg2:#0f1729; --panel:#131d33; --panel2:#1a2642; --line:#24324f;
+  --ink:#eef2fb; --ink2:#a9b4cc; --ink3:#6f7c99;
+  --accent:#4fd1c5; --accent2:#7c9cff; --warn:#f6ad55; --bad:#fc8181; --good:#68d391;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{overflow:hidden}
+.deck{position:relative;height:100%;width:100%}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;padding:56px 72px 72px;opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .35s ease,transform .35s ease,visibility .35s;overflow-y:auto;
+  background:radial-gradient(1200px 600px at 90% -10%,rgba(124,156,255,.10),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(79,209,197,.08),transparent 60%),var(--bg)}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.inner{max-width:1180px;width:100%;margin:auto}
+.eyebrow{font:600 12px/1 "JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+h1{font-size:clamp(40px,6vw,76px);font-weight:800;letter-spacing:-.03em;line-height:1.02}
+h2{font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-bottom:10px}
+.lead{font-size:clamp(16px,1.5vw,20px);color:var(--ink2);line-height:1.5;max-width:880px;margin-bottom:30px}
+.grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.card p,.card li{font-size:14px;color:var(--ink2);line-height:1.5}
+.card ul{padding-left:18px}
+.num{font:600 12px "JetBrains Mono",monospace;color:var(--accent);margin-bottom:8px;display:block}
+.stat{font-size:clamp(30px,3.6vw,46px);font-weight:800;letter-spacing:-.02em}
+.stat small{font-size:.45em;color:var(--ink2);font-weight:600}
+.bad{color:var(--bad)}.good{color:var(--good)}.warn{color:var(--warn)}.acc{color:var(--accent)}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.45}
+th{font:600 11px "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);background:var(--bg2)}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:600}
+td{color:var(--ink2)}
+.mono{font-family:"JetBrains Mono",monospace;font-size:12.5px;white-space:nowrap}
+.pill{display:inline-block;font:600 11px "JetBrains Mono",monospace;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink2);background:var(--bg2);margin:2px 4px 2px 0}
+.pill.a{color:var(--accent);border-color:rgba(79,209,197,.4)}
+.pill.r{color:var(--bad);border-color:rgba(252,129,129,.4)}
+.pill.y{color:var(--warn);border-color:rgba(246,173,85,.4)}
+.pill.g{color:var(--good);border-color:rgba(104,211,145,.4)}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:s}
+.step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 16px 52px;min-height:96px}
+.step::before{counter-increment:s;content:counter(s,decimal-leading-zero);position:absolute;left:14px;top:16px;font:600 13px "JetBrains Mono",monospace;color:var(--accent)}
+.step b{display:block;font-size:14.5px;margin-bottom:4px}.step span{font-size:13px;color:var(--ink2);line-height:1.45}
+.bar{display:grid;grid-template-columns:150px 1fr 48px;gap:12px;align-items:center;margin:10px 0;font-size:14px}
+.bar .t{height:12px;background:var(--bg2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar .f{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px}
+.bar .v{font:600 13px "JetBrains Mono",monospace;color:var(--ink2);text-align:right}
+.tier{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:var(--panel);border:1px solid var(--line);margin-bottom:10px}
+.tier .n{flex:0 0 40px;height:40px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:18px}
+.t1 .n{background:rgba(79,209,197,.18);color:var(--accent)}.t2 .n{background:rgba(124,156,255,.18);color:var(--accent2)}
+.t3 .n{background:rgba(246,173,85,.15);color:var(--warn)}.t4 .n{background:rgba(111,124,153,.18);color:var(--ink3)}
+.tier b{font-size:14.5px}.tier p{font-size:13px;color:var(--ink2);margin-top:3px}
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;margin-top:10px}
+.phase{padding:0 14px 0 0}
+.phase .w{font:600 12px "JetBrains Mono",monospace;color:var(--accent);margin-bottom:10px}
+.phase .line{height:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;margin-bottom:16px;position:relative}
+.phase .line::after{content:"";position:absolute;right:-2px;top:-6px;width:16px;height:16px;transform:rotate(45deg);background:var(--bg);border:2px solid var(--accent2)}
+.phase h3{font-size:16px;margin-bottom:8px}
+.phase ul{list-style:none;font-size:13px;color:var(--ink2);line-height:1.6}
+.phase li::before{content:"▸ ";color:var(--ink3)}
+.phase .gate{margin-top:10px;font-size:12.5px;color:var(--warn)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.vs .card.old{border-color:rgba(252,129,129,.35)}.vs .card.new{border-color:rgba(79,209,197,.45)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.kv:last-child{border:0}.kv span:first-child{color:var(--ink3)}.kv span:last-child{font-weight:600;text-align:right}
+.quote{border-left:3px solid var(--accent);padding:6px 0 6px 18px;font-size:18px;line-height:1.5;color:var(--ink);max-width:900px}
+.title-slide .inner{display:flex;flex-direction:column;justify-content:center;min-height:100%}
+.meta{margin-top:40px;display:flex;gap:28px;flex-wrap:wrap;font:500 13px "JetBrains Mono",monospace;color:var(--ink3)}
+.meta b{color:var(--ink2);font-weight:600}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:34px}
+.logo .mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center}
+.logo span{font-weight:700;font-size:18px;letter-spacing:-.01em}
+svg.arch text{font-family:Inter,sans-serif}
+/* CRM integration */
+.role{display:inline-block;font:600 11px "JetBrains Mono",monospace;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.role.own{background:rgba(79,209,197,.15);color:var(--accent)}
+.role.read{background:rgba(124,156,255,.15);color:var(--accent2)}
+.role.crm{background:rgba(111,124,153,.18);color:var(--ink2)}
+.role.p2{background:rgba(246,173,85,.13);color:var(--warn)}
+.pane{background:var(--bg2);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.pane-top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.pane-top .dots{display:flex;gap:6px}.pane-top .dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.pane-top .ttl{font-weight:600;font-size:13px}
+.pane-top .flt{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:500 11px "JetBrains Mono",monospace;color:var(--ink2);border:1px solid var(--line);border-radius:7px;padding:4px 8px;background:var(--bg2)}
+.chip.on{color:var(--accent);border-color:rgba(79,209,197,.45)}
+.pane-body{display:grid;grid-template-columns:1fr 250px;gap:0}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.kpi span{font-size:11px;color:var(--ink3)}
+.leads{width:100%;border:0;border-radius:0;background:none;font-size:12.5px}
+.leads th{font-size:10px;padding:8px 10px}
+.leads td{padding:8px 10px;color:var(--ink2)}
+.leads td:first-child{font-weight:600;color:var(--ink)}
+.leads td small{display:block;font-weight:400;color:var(--ink3);font-size:11px}
+.t-badge{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;font-weight:800;font-size:11.5px}
+.tb1{background:rgba(79,209,197,.18);color:var(--accent)}.tb2{background:rgba(124,156,255,.18);color:var(--accent2)}.tb3{background:rgba(246,173,85,.15);color:var(--warn)}
+.disp{display:inline-block;font:600 10.5px "JetBrains Mono",monospace;padding:3px 7px;border-radius:6px;white-space:nowrap}
+.d-new{background:rgba(111,124,153,.2);color:var(--ink2)}
+.d-con{background:rgba(124,156,255,.15);color:var(--accent2)}
+.d-apt{background:rgba(79,209,197,.15);color:var(--accent)}
+.d-desk{background:rgba(246,173,85,.14);color:var(--warn)}
+.d-won{background:rgba(104,211,145,.16);color:var(--good)}
+.d-lost{background:rgba(252,129,129,.14);color:var(--bad)}
+.late{color:var(--bad)!important;font-weight:600}
+.side{border-left:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:14px}
+.side h4{font:600 10.5px "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.fun{display:grid;grid-template-columns:86px 1fr 28px;gap:8px;align-items:center;font-size:11.5px;margin:5px 0;color:var(--ink2)}
+.fun .t{height:9px;background:var(--panel);border-radius:9px;overflow:hidden}
+.fun .f{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.fun .v{font:600 11px "JetBrains Mono",monospace;text-align:right;color:var(--ink)}
+.own-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px dashed var(--line);color:var(--ink2)}
+.own-row:last-child{border:0}.own-row b{color:var(--ink);font-weight:600}
+.lifecycle{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:18px 0 6px}
+.lifecycle .arrow{color:var(--ink3);font-size:14px}
+.lifecycle .disp{font-size:12px;padding:7px 11px}
+@media (max-width:900px){.pane-body{grid-template-columns:1fr}.side{border-left:0;border-top:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}.leads{display:block;overflow-x:auto}}
+/* real-time arrival */
+.rt-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:8px}
+.rt-step{position:relative;padding:0 18px 0 0}
+.rt-step .dot{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 13px "JetBrains Mono",monospace;background:var(--panel);border:1px solid var(--line);color:var(--accent);margin-bottom:12px;position:relative;z-index:1}
+.rt-step::before{content:"";position:absolute;left:34px;right:0;top:17px;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:.55}
+.rt-step:last-child::before{display:none}
+.rt-step .when{font:600 11px "JetBrains Mono",monospace;color:var(--warn);margin-bottom:4px}
+.rt-step h3{font-size:15px;margin-bottom:6px}
+.rt-step p{font-size:13px;color:var(--ink2);line-height:1.5}
+.cap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.cap .card h3{display:flex;align-items:center;gap:8px}
+.cap .tag{margin-left:auto}
+.phone-wrap{display:grid;grid-template-columns:270px 1fr;gap:28px;align-items:center}
+.phone{width:262px;height:520px;border-radius:36px;border:2px solid var(--line);background:#05080f;padding:12px;box-shadow:0 30px 70px rgba(0,0,0,.5);position:relative}
+.phone .screen{height:100%;border-radius:26px;background:var(--bg2);overflow:hidden;display:flex;flex-direction:column}
+.phone .notch{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:80px;height:18px;border-radius:12px;background:#05080f;z-index:2}
+.cam{height:178px;background:radial-gradient(circle at 50% 40%,#22324f,#0c1322);position:relative;display:grid;place-items:center}
+.cam .frame{width:180px;height:62px;border:2px solid var(--accent);border-radius:8px;display:grid;place-items:center;box-shadow:0 0 0 999px rgba(5,8,15,.35)}
+.cam .bc{width:150px;height:30px;background:repeating-linear-gradient(90deg,#eef2fb 0 2px,transparent 2px 4px,#eef2fb 4px 5px,transparent 5px 8px,#eef2fb 8px 11px,transparent 11px 13px)}
+.cam .scanline{position:absolute;left:41px;right:41px;top:88px;height:2px;background:var(--bad);box-shadow:0 0 10px var(--bad)}
+.cam .hint{position:absolute;bottom:10px;font:500 10px "JetBrains Mono",monospace;color:var(--ink2)}
+.seg{display:flex;margin:10px 12px 0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg span{flex:1;text-align:center;font:600 10px "JetBrains Mono",monospace;padding:6px 0;color:var(--ink3)}
+.seg span.on{background:var(--panel2);color:var(--accent)}
+.res{margin:10px 12px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
+.res .top{display:flex;justify-content:space-between;align-items:center}
+.res b{font-size:13px}.res small{display:block;color:var(--ink3);font-size:10.5px;margin-top:2px}
+.res .rs{margin-top:8px;font-size:11px;color:var(--ink2);line-height:1.5}
+.res .rs div::before{content:"• ";color:var(--accent)}
+.btns{display:flex;gap:6px;margin:0 12px}
+.btns span{flex:1;text-align:center;font:600 10.5px Inter,sans-serif;padding:8px 0;border-radius:8px;background:var(--panel2);color:var(--ink)}
+.btns span.p{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#05080f}
+pre.code{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font:12px/1.55 "JetBrains Mono",monospace;color:var(--ink2);overflow:auto}
+pre.code .k{color:var(--accent2)}pre.code .s{color:var(--accent)}pre.code .c{color:var(--ink3)}
+@media (max-width:900px){.rt-flow,.cap{grid-template-columns:1fr}.rt-step{padding:0 0 18px}.rt-step::before{display:none}.phone-wrap{grid-template-columns:1fr;justify-items:center}}
+/* chrome */
+.progress{position:fixed;left:0;top:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:10;transition:width .3s}
+.hud{position:fixed;right:22px;bottom:18px;display:flex;align-items:center;gap:10px;z-index:10}
+.hud button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:16px;cursor:pointer}
+.hud button:hover{border-color:var(--accent)}
+.hud .count{font:600 12px "JetBrains Mono",monospace;color:var(--ink3);min-width:58px;text-align:center}
+.brand{position:fixed;left:24px;bottom:22px;font:600 11px "JetBrains Mono",monospace;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase;z-index:10}
+.note{font-size:12.5px;color:var(--ink3);margin-top:14px}
+@media (max-width:900px){
+  body{overflow:auto}
+  .slide{position:relative;opacity:1;visibility:visible;transform:none;min-height:100vh;padding:48px 20px 56px;border-bottom:1px solid var(--line)}
+  .g3,.g4,.g5,.flow,.phases{grid-template-columns:1fr 1fr}.g2,.vs{grid-template-columns:1fr}
+  .hud,.progress{display:none}
+  table{font-size:12.5px;display:block;overflow-x:auto}
+  .bar{grid-template-columns:110px 1fr 40px}
+}
+@media (max-width:560px){.g3,.g4,.g5,.flow,.phases{grid-template-columns:1fr}}
+@media print{
+  body{overflow:visible}.slide{position:relative;opacity:1;visibility:visible;transform:none;page-break-after:always;min-height:100vh}
+  .hud,.progress,.brand{display:none}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="brand">LaneSight · Ortiz Auto Group</div>
+<main class="deck" id="deck">
+
+<!-- 1 Title -->
+<section class="slide title-slide">
+  <div class="inner">
+    <div class="logo">
+      <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0a0f1c" stroke-width="2.4" stroke-linecap="round"><path d="M3 17h18M6 12h12M9 7h6"/></svg></div>
+      <span>LaneSight</span>
+    </div>
+    <div class="eyebrow">Spec-driven build document · Pilot</div>
+    <h1>Every service visit,<br><span class="grad">a ranked, owned opportunity.</span></h1>
+    <p class="lead" style="margin-top:22px">Service-to-Sales Acquisition Intelligence on Snowflake. Built from the dealer's own systems, explainable at every step, and designed to work for any OEM franchise or dealer group.</p>
+    <div class="meta"><div>Client <b>Ortiz Auto Group</b></div><div>Scope <b>3 rooftops · 8 sources · 12 weeks</b></div><div>Date <b>Nov 2026</b></div></div>
+  </div>
+</section>
+
+<!-- 2 How to read -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">How this spec works</div>
+    <h2>Each layer constrains the next.</h2>
+    <p class="lead">Written so an engineer or an AI coding agent can build directly from it. All customer, staff and store details are anonymized; vendor names are examples of a category only.</p>
+    <div class="grid g4">
+      <div class="card"><span class="num">01</span><h3>Constitution</h3><p>Ten principles that never bend.</p></div>
+      <div class="card"><span class="num">02</span><h3>Spec</h3><p>Problem, goals, personas, user stories, functional and non-functional requirements.</p></div>
+      <div class="card"><span class="num">03</span><h3>Plan</h3><p>Sources, data model, scoring, benchmark, architecture.</p></div>
+      <div class="card"><span class="num">04</span><h3>Tasks</h3><p>Four gated phases of checkable build steps.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 Problem -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">The problem</div>
+    <h2>The process works. The plumbing doesn't.</h2>
+    <p class="lead">One specialist runs service-to-sales by hand across seven tools, and the numbers driving it are often wrong. One observed record had equity misstated by about $23K and a quote sent before the inspection was done.</p>
+    <div class="grid g4">
+      <div class="card"><div class="stat">7 <small>tools</small></div><p>Swivel-chair lookups per opportunity</p></div>
+      <div class="card"><div class="stat bad">~$23K <small>error</small></div><p>Incumbent payoff vs. contract math on one deal</p></div>
+      <div class="card"><div class="stat warn">~4.5 <small>hrs</small></div><p>Arrival to first proposal on a top-scored customer</p></div>
+      <div class="card"><div class="stat">14 <small>emails</small></div><p>Monthly campaigns to a paid-off, high-equity customer, none acted on</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 Workflow -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Current state · observed at one rooftop</div>
+    <h2>Today's workflow is eight manual handoffs.</h2>
+    <p class="lead">Every step lives in a different system, keyed differently, with no feedback between them.</p>
+    <div class="flow">
+      <div class="step"><b>Morning digest</b><span>Equity tool emails the day's service appointments at 6:30 AM.</span></div>
+      <div class="step"><b>Arrival alerts</b><span>~15 unranked emails by mid-afternoon into a folder of ~900 unread.</span></div>
+      <div class="step"><b>Deal sheet review</b><span>Contract, replacement scenarios, incentives, estimated equity.</span></div>
+      <div class="step"><b>CRM desking</b><span>Proposals built and sent; trade figures re-keyed by hand.</span></div>
+      <div class="step"><b>Service lookup</b><span>Repair order and inspection found by name search.</span></div>
+      <div class="step"><b>Appraisal</b><span>Trade value and retail position in the inventory tool.</span></div>
+      <div class="step"><b>Next-day prospecting</b><span>Tomorrow's appointments filtered and sorted by trade value.</span></div>
+      <div class="step"><b>Tracking</b><span>Results logged in spreadsheets.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 Failure modes -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Observed failure modes</div>
+    <h2>Eight ways good opportunities get lost.</h2>
+    <table>
+      <tr><th>Failure</th><th>Evidence</th><th>Impact</th></tr>
+      <tr><td>Wrong mileage</td><td>20,000 mi placeholder on most rows; one RO said 70,473 mi</td><td>Trade values and equity unreliable</td></tr>
+      <tr><td>Stale payoff</td><td>Incumbent $67,800 vs. contract math and CRM desk ~$45,000</td><td>Negative equity overstated ~3.7×</td></tr>
+      <tr><td>Quote before inspection</td><td>Proposal sent ~12:00; inspection posted 1:27 PM</td><td>Strongest talking points never used</td></tr>
+      <tr><td>House-account routing</td><td>High-equity customers in "Orphan" / "Conquest" buckets</td><td>Hours from arrival to first proposal</td></tr>
+      <tr><td>No outreach feedback</td><td>Outreach toggle off on every row; contact only in CRM</td><td>Scores can't learn from outcomes</td></tr>
+      <tr><td>Unscored vehicles</td><td>Service-only and off-brand vehicles have no score</td><td>Acquisition targets invisible</td></tr>
+      <tr><td>Campaign fatigue</td><td>14 monthly emails to a paid-off, high-equity customer</td><td>Wrong channel for the best customers</td></tr>
+      <tr><td>No household view</td><td>~9-vehicle collector client; under half surfaced</td><td>Relationship value lost</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 6 Constitution -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Constitution</div>
+    <h2>Ten principles that override everything else.</h2>
+    <div class="grid g5" style="margin-top:20px">
+      <div class="card"><span class="num">01</span><h3>Customer & household first</h3><p>The core entity is a person and their garage, not a deal or a VIN.</p></div>
+      <div class="card"><span class="num">02</span><h3>Source facts beat vendor scores</h3><p>Odometer from the RO, payoff from contract math or lender.</p></div>
+      <div class="card"><span class="num">03</span><h3>Show source & freshness</h3><p>Every number carries its system and as-of time.</p></div>
+      <div class="card"><span class="num">04</span><h3>Every priority has a reason</h3><p>Plain-language reason codes a salesperson can say.</p></div>
+      <div class="card"><span class="num">05</span><h3>Humans decide</h3><p>No automated appraisals, offers or messages without approval.</p></div>
+      <div class="card"><span class="num">06</span><h3>Close the loop</h3><p>Every outreach and outcome is captured.</p></div>
+      <div class="card"><span class="num">07</span><h3>One owner</h3><p>House accounts are a routing failure, not an assignment.</p></div>
+      <div class="card"><span class="num">08</span><h3>Vendor-agnostic</h3><p>Each source is a category with a swappable adapter.</p></div>
+      <div class="card"><span class="num">09</span><h3>Privacy by default</h3><p>Masked data, role-based access, suppression flags honored.</p></div>
+      <div class="card"><span class="num">10</span><h3>Benchmark first</h3><p>No incumbent retired until LaneSight beats it.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 Goals -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Goals & non-goals</div>
+    <h2>More accurate, faster, better owned than the incumbent.</h2>
+    <p class="lead">The pilot succeeds if LaneSight gives OAG a better daily worklist than the incumbent equity tool at 3 rooftops.</p>
+    <div class="grid g2">
+      <div class="card"><h3 class="acc">Goals</h3><ul>
+        <li>Unify up to 8 sources into one service-to-sales model in Snowflake</li>
+        <li>Resolve customers into households with a garage of every known vehicle</li>
+        <li>Daily ranked worklist with priority tiers and reason codes</li>
+        <li>Recompute equity from contract and repair-order facts</li>
+        <li>Capture every outreach and outcome</li>
+        <li>Benchmark vs. the incumbent; inform pull, rebuild or retire</li></ul></div>
+      <div class="card"><h3 class="warn">Non-goals for the pilot</h3><ul>
+        <li>Automated appraisals, offers or messages without approval</li>
+        <li>Replacing the DMS, CRM or service-lane tool</li>
+        <li>Writing back to source systems (read-only)</li>
+        <li>Rooftops beyond the 3 in scope</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 Metrics -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Success metrics · targets confirmed in discovery</div>
+    <h2>What "better" means, in numbers.</h2>
+    <table>
+      <tr><th>Metric</th><th>Baseline source</th><th>Pilot target</th></tr>
+      <tr><td>Arrival to first contact</td><td>Alert timestamp vs. first CRM activity</td><td>Under 60 min for Tier 1</td></tr>
+      <tr><td>Equity accuracy</td><td>Desked trade figures vs. estimate</td><td>Within $2,500 on 90% of desked deals</td></tr>
+      <tr><td>Mileage accuracy</td><td>Repair-order odometer</td><td>100% of serviced vehicles on actual odometer</td></tr>
+      <tr><td>Opportunity coverage</td><td>Appointments with a score</td><td>95%+, incl. service-only and off-brand</td></tr>
+      <tr><td>Named ownership</td><td>Opportunities assigned to a person</td><td>100% of Tier 1 and 2</td></tr>
+      <tr><td>Outreach captured</td><td>Outcomes logged</td><td>90%+ of worked opportunities</td></tr>
+      <tr><td>Conversions</td><td>Vehicles acquired or replaced from service</td><td>Baseline set in month 1</td></tr>
+      <tr><td>Time saved</td><td>Lookups per opportunity</td><td>50% fewer</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 9 Personas -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Personas</div>
+    <h2>Five roles. One design target.</h2>
+    <p class="lead">The acquisition specialist is the primary user.</p>
+    <div class="grid g5">
+      <div class="card" style="border-color:rgba(79,209,197,.45)"><span class="num">PRIMARY</span><h3>Acquisition specialist</h3><p>One ranked list, trusted equity, full customer and garage in one view, one-click logging.</p></div>
+      <div class="card"><span class="num">USER</span><h3>Salesperson</h3><p>Clear tasks, a talk track from reason codes, condition and service history before calling.</p></div>
+      <div class="card"><span class="num">USER</span><h3>Service advisor</h3><p>A discreet flag that a customer is an opportunity, and who owns it.</p></div>
+      <div class="card"><span class="num">MANAGER</span><h3>Sales / used-car manager</h3><p>Pipeline by tier, inventory need vs. opportunities, aging of unworked leads.</p></div>
+      <div class="card"><span class="num">EXEC</span><h3>Group executive</h3><p>Cross-rooftop conversions, gross per conversion, benchmark results.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 User stories -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">User stories · Given / When / Then in the full spec</div>
+    <h2>Eight stories define the pilot.</h2>
+    <div class="grid g4" style="margin-top:20px">
+      <div class="card"><span class="num">US-1 · P1</span><h3>Daily ranked worklist</h3><p>Appointments sorted by tier, then score, with reason codes, owner and last contact. Filters in ≤2 s.</p></div>
+      <div class="card"><span class="num">US-2 · P1</span><h3>Real-time arrival alert</h3><p>Tier 1–2 arrivals notify the named owner within 5 min. Tier 3–4: worklist only.</p></div>
+      <div class="card"><span class="num">US-3 · P1</span><h3>Customer 360 + garage</h3><p>Every household vehicle on one card; new VINs auto-attached or queued for review.</p></div>
+      <div class="card"><span class="num">US-4 · P1</span><h3>Trusted equity</h3><p>Payoff from amortization, odometer from RO; gaps over $2,500 flagged with both sources.</p></div>
+      <div class="card"><span class="num">US-5 · P1</span><h3>Condition-aware outreach</h3><p>"Inspection pending" shown; results and customer-pay totals before the quote.</p></div>
+      <div class="card"><span class="num">US-6 · P1</span><h3>Named ownership</h3><p>House-account opportunities routed by rule; reassignment logged.</p></div>
+      <div class="card"><span class="num">US-7 · P1</span><h3>Outcome capture</h3><p>One-click logging; CRM activities appear within 15 min; outcome required to close.</p></div>
+      <div class="card"><span class="num">US-8 · P2</span><h3>Ask in plain language</h3><p>Questions answered over governed tables, with the SQL shown.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 FRs -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Functional requirements</div>
+    <h2>Twenty testable requirements, each traced to a story.</h2>
+    <div class="grid g2" style="margin-top:16px">
+      <table>
+        <tr><th>ID</th><th>Requirement</th></tr>
+        <tr><td class="mono">FR-01</td><td>Appointments, ROs, customers, vehicles every 15 min</td></tr>
+        <tr><td class="mono">FR-02</td><td>CRM leads, activities, desked deals, trade figures</td></tr>
+        <tr><td class="mono">FR-03</td><td>Incumbent scores, equity, scenarios, campaigns daily</td></tr>
+        <tr><td class="mono">FR-04</td><td>Inventory, appraisals, book values daily</td></tr>
+        <tr><td class="mono">FR-05</td><td>Customer golden record with match confidence</td></tr>
+        <tr><td class="mono">FR-06</td><td>Households from address, phone, email, co-buyer</td></tr>
+        <tr><td class="mono">FR-07</td><td>Garage per household with VIN and status</td></tr>
+        <tr><td class="mono">FR-08</td><td>Payoff from contract terms as of run date</td></tr>
+        <tr><td class="mono">FR-09</td><td>RO odometer ≤90 days, else labeled estimate</td></tr>
+        <tr><td class="mono">FR-10</td><td>Equity = trade value − payoff, sources shown</td></tr>
+      </table>
+      <table>
+        <tr><th>ID</th><th>Requirement</th></tr>
+        <tr><td class="mono">FR-11</td><td>Flag LaneSight vs. incumbent gaps &gt; $2,500</td></tr>
+        <tr><td class="mono">FR-12</td><td>Score every appointment, incl. off-brand</td></tr>
+        <tr><td class="mono">FR-13</td><td>Tier 1–4 and up to 3 reason codes</td></tr>
+        <tr><td class="mono">FR-14</td><td>Rule-based routing with logged reassignment</td></tr>
+        <tr><td class="mono">FR-15</td><td>Tier 1–2 alerts within 5 min of RO open</td></tr>
+        <tr><td class="mono">FR-16</td><td>Inspection status, results, customer-pay totals</td></tr>
+        <tr><td class="mono">FR-17</td><td>Outreach logging; CRM activities read back</td></tr>
+        <tr><td class="mono">FR-18</td><td>Honor opt-out and white-glove flags</td></tr>
+        <tr><td class="mono">FR-19</td><td>Natural-language questions with SQL shown</td></tr>
+        <tr><td class="mono">FR-20</td><td>Weekly benchmark scorecard vs. incumbent</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 12 NFRs -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Non-functional requirements</div>
+    <h2>Fresh, fast, private, explainable.</h2>
+    <div class="grid g3" style="margin-top:20px">
+      <div class="card"><h3>Freshness</h3><p>Service data ≤15 min old in business hours; daily sources by 6:00 AM.</p></div>
+      <div class="card"><h3>Performance</h3><p>Worklist ≤3 s for 500 opportunities; filters ≤2 s.</p></div>
+      <div class="card"><h3>Data quality</h3><p>Tests on every load: keys, placeholder mileage, duplicate VINs, stale payoff.</p></div>
+      <div class="card"><h3>Security & privacy</h3><p>Role-based by rooftop and persona; masking; opt-out everywhere; no external model training.</p></div>
+      <div class="card"><h3>Auditability</h3><p>Every score, reason code, routing change and merge versioned and explainable.</p></div>
+      <div class="card"><h3>Portability & cost</h3><p>Adapters per category; 99.5% in store hours; usage tracked with budget alerts.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 Sources -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Source systems</div>
+    <h2>Eight categories, each with a swappable adapter.</h2>
+    <table>
+      <tr><th>Category</th><th>Examples</th><th>Key data</th><th>Cadence</th><th>Join keys</th></tr>
+      <tr><td>DMS</td><td>CDK, Reynolds, Tekion</td><td>Customers, vehicles, contracts, ROs, appointments</td><td>15 min / daily</td><td class="mono">cust #, VIN</td></tr>
+      <tr><td>Service lane</td><td>myKaarma, Xtime</td><td>Check-in, RO status, inspection, customer-pay</td><td>15 min</td><td class="mono">RO #, cust #, VIN</td></tr>
+      <tr><td>CRM</td><td>DriveCentric, eLead</td><td>Leads, owners, activities, desked deals</td><td>15 min / daily</td><td class="mono">cust #, phone, email</td></tr>
+      <tr><td>Equity tool</td><td>automotiveMastermind, AutoAlert</td><td>Scores, equity, scenarios, campaigns</td><td>Daily</td><td class="mono">VIN</td></tr>
+      <tr><td>Inventory</td><td>VinCue, vAuto</td><td>Inventory, appraisals, cost, recon, market</td><td>Daily</td><td class="mono">VIN, stock #</td></tr>
+      <tr><td>Book values</td><td>Galves, Black Book</td><td>Trade and wholesale by VIN and mileage</td><td>Daily</td><td class="mono">VIN</td></tr>
+      <tr><td>OEM</td><td>OEM portals</td><td>Incentives, warranty, recalls, programs</td><td>Daily</td><td class="mono">VIN, program</td></tr>
+      <tr><td>Lender / F&amp;I</td><td>Dealertrack, captive</td><td>Contract terms, payoff quotes</td><td>Daily / on demand</td><td class="mono">contract #, VIN</td></tr>
+    </table>
+    <p class="note">APIs first, then file drops, then exports. No screen scraping. Read-only. Spreadsheet trackers imported once, then retired.</p>
+  </div>
+</section>
+
+<!-- 14 Architecture -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Architecture</div>
+    <h2>Eight sources become one owned, ranked worklist.</h2>
+    <svg class="arch" viewBox="0 0 760 480" style="width:100%;max-height:68vh;margin-top:8px" role="img" aria-label="LaneSight architecture">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#6f7c99"/></marker>
+        <linearGradient id="cg" x1="0" x2="1"><stop offset="0" stop-color="#4fd1c5" stop-opacity=".22"/><stop offset="1" stop-color="#7c9cff" stop-opacity=".22"/></linearGradient>
+      </defs>
+      <g font-size="13" fill="none" stroke="#24324f">
+        <g><rect x="24" y="20" width="160" height="56" rx="8" fill="#131d33"/><rect x="208" y="20" width="160" height="56" rx="8" fill="#131d33"/><rect x="392" y="20" width="160" height="56" rx="8" fill="#131d33"/><rect x="576" y="20" width="160" height="56" rx="8" fill="#131d33"/>
+        <rect x="24" y="84" width="160" height="56" rx="8" fill="#131d33"/><rect x="208" y="84" width="160" height="56" rx="8" fill="#131d33"/><rect x="392" y="84" width="160" height="56" rx="8" fill="#131d33"/><rect x="576" y="84" width="160" height="56" rx="8" fill="#131d33"/></g>
+        <rect x="24" y="168" width="712" height="132" rx="10" fill="#0f1729"/>
+        <rect x="40" y="208" width="210" height="72" rx="8" fill="#131d33"/>
+        <rect x="274" y="208" width="210" height="72" rx="8" fill="url(#cg)" stroke="#4fd1c5" stroke-width="2"/>
+        <rect x="508" y="208" width="210" height="72" rx="8" fill="#131d33"/>
+        <g><rect x="24" y="328" width="128" height="56" rx="8" fill="#131d33"/><rect x="170" y="328" width="128" height="56" rx="8" fill="#131d33"/><rect x="316" y="328" width="128" height="56" rx="8" fill="#131d33"/><rect x="462" y="328" width="128" height="56" rx="8" fill="#131d33"/><rect x="608" y="328" width="128" height="56" rx="8" fill="#131d33"/></g>
+      </g>
+      <g fill="none" stroke="#6f7c99" stroke-width="1.25">
+        <path d="M380 140V168" marker-end="url(#ar)"/><path d="M250 244H274" marker-end="url(#ar)"/><path d="M484 244H508" marker-end="url(#ar)"/>
+        <path d="M380 300V314M88 314H672"/><path d="M88 314V328" marker-end="url(#ar)"/><path d="M234 314V328" marker-end="url(#ar)"/><path d="M380 314V328" marker-end="url(#ar)"/><path d="M526 314V328" marker-end="url(#ar)"/><path d="M672 314V328" marker-end="url(#ar)"/>
+        <path d="M88 384V404H307V280" stroke="#4fd1c5" stroke-dasharray="4 4" marker-end="url(#ar)"/>
+      </g>
+      <g font-size="13" font-weight="600" fill="#eef2fb">
+        <text x="36" y="44">DMS</text><text x="220" y="44">Service lane</text><text x="404" y="44">CRM</text><text x="588" y="44">Equity tool</text>
+        <text x="36" y="108">Inventory</text><text x="220" y="108">Book values</text><text x="404" y="108">OEM</text><text x="588" y="108">Lender / F&amp;I</text>
+        <text x="40" y="192">Snowflake</text><text x="52" y="232">Landing</text><text x="286" y="232">Conformed</text><text x="520" y="232">Refined</text>
+        <text x="36" y="352">Daily worklist</text><text x="182" y="352">Customer 360</text><text x="328" y="352">Tiered alerts</text><text x="474" y="352">Ask (Cortex)</text><text x="620" y="352">Benchmark</text>
+      </g>
+      <g font-size="11.5" fill="#a9b4cc">
+        <text x="36" y="62">CDK, Reynolds</text><text x="220" y="62">myKaarma, Xtime</text><text x="404" y="62">DriveCentric, eLead</text><text x="588" y="62">automotiveMastermind</text>
+        <text x="36" y="126">VinCue, vAuto</text><text x="220" y="126">Galves, Black Book</text><text x="404" y="126">Incentives, warranty</text><text x="588" y="126">Dealertrack, captive</text>
+        <text x="52" y="250">Raw copy of each source</text><text x="52" y="266">Typing and load metadata</text>
+        <text x="286" y="250" fill="#eef2fb">Customer and household record</text><text x="286" y="266" fill="#eef2fb">VIN, payoff, odometer, DQ</text>
+        <text x="520" y="250">Opportunities and scores</text><text x="520" y="266">Tiers and reason codes</text>
+        <text x="36" y="370">Ranked by tier</text><text x="182" y="370">Household garage</text><text x="328" y="370">Named owner</text><text x="474" y="370">Governed SQL</text><text x="620" y="370">vs. incumbent</text>
+        <text x="100" y="424" fill="#4fd1c5">Outreach and outcomes feed back into scoring</text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- 15 Stack -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Technical plan</div>
+    <h2>Snowflake-native, every piece swappable.</h2>
+    <table>
+      <tr><th>Component</th><th>Pilot choice</th><th>Notes</th></tr>
+      <tr><td>Ingestion</td><td>Snowflake connectors, Snowpipe, file drops</td><td>One adapter per source category</td></tr>
+      <tr><td>Transformation</td><td>dbt on Snowflake</td><td>Tests on every model; Landing, Conformed, Refined</td></tr>
+      <tr><td>Identity resolution</td><td>SQL rules + review queue</td><td>MDM platform optional after pilot</td></tr>
+      <tr><td>Scoring</td><td>Snowflake SQL / Snowpark</td><td>Rules-weighted first; learned model after 60 days</td></tr>
+      <tr><td>Workbench</td><td>Streamlit in Snowflake</td><td>React app considered for production</td></tr>
+      <tr><td>Natural language</td><td>Snowflake Cortex</td><td>Governed Refined tables only</td></tr>
+      <tr><td>Alerts</td><td>Email, SMS or Teams via webhook</td><td>Tier 1–2, named owner</td></tr>
+      <tr><td>Security</td><td>Roles by rooftop and persona, dynamic masking</td><td>Audit via access history</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- CRM 1 Mapping -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">CRM integration · who does what</div>
+    <h2>LaneSight finds and ranks. The CRM still executes.</h2>
+    <p class="lead">LaneSight sits beside the dealer's CRM rather than replacing it. It owns identity, scoring and the closed-loop view, reads everything else, and starts writing back in phase 2.</p>
+    <table>
+      <tr><th>CRM function</th><th>LaneSight role</th><th>When</th><th>How it works</th></tr>
+      <tr><td>Customer record & identity</td><td><span class="role own">Owns</span></td><td>Pilot</td><td>Household golden record; the CRM is one input among several</td></tr>
+      <tr><td>Opportunity scoring</td><td><span class="role own">Owns</span></td><td>Pilot</td><td>Tiers and reason codes replace unranked equity-tool alerts</td></tr>
+      <tr><td>Lead assignment & routing</td><td><span class="role read">Recommends</span></td><td>Pilot</td><td>Named owner shown in LaneSight; written to the CRM in phase 2</td></tr>
+      <tr><td>Lead creation</td><td><span class="role p2">Writes back</span></td><td>Phase 2</td><td>Tier 1–2 opportunities pushed into the CRM as leads, tagged by source</td></tr>
+      <tr><td>Tasks, activities, appointments</td><td><span class="role read">Reads</span></td><td>Pilot</td><td>Activity sync every 15 min drives last contact, speed and disposition</td></tr>
+      <tr><td>Calls, texts, emails, desking</td><td><span class="role crm">Stays in CRM</span></td><td>—</td><td>Salespeople keep working where they work; LaneSight reads the outcome</td></tr>
+      <tr><td>Dispositions & conversion</td><td><span class="role own">Owns the view</span></td><td>Pilot</td><td>One status per opportunity, mapped from every CRM's own codes</td></tr>
+      <tr><td>Campaigns & consent</td><td><span class="role read">Enforces</span></td><td>Pilot / Ph 2</td><td>Honors opt-out and white-glove; feeds audiences to the CRM or CDP later</td></tr>
+    </table>
+    <p class="note">Works with any CRM category: VinSolutions, eLead, DealerSocket, FOCUS, Tekion, DriveCentric. OEM platforms (e.g., Mercedes-Benz USA's Netstar) are a phase 2 source of eligibility and OEM-originated leads, subject to data-sharing agreements.</p>
+  </div>
+</section>
+
+<!-- CRM 2 Single pane -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Manager view · one pane of glass</div>
+    <h2>Every lead and its disposition, across every source.</h2>
+    <p class="lead" style="margin-bottom:18px">Service-lane, CRM and OEM leads in one list, with owner, speed and outcome, so the manager no longer has to open the CRM, the equity tool and a spreadsheet.</p>
+    <div class="pane">
+      <div class="pane-top">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <span class="ttl">LaneSight · Sales manager</span>
+        <div class="flt"><span class="chip on">All 3 rooftops</span><span class="chip">This week</span><span class="chip on">Tier 1–2</span><span class="chip">All owners</span><span class="chip">All sources</span></div>
+      </div>
+      <div class="pane-body">
+        <div>
+          <div class="kpis">
+            <div class="kpi"><b>48</b><span>Open Tier 1–2 leads</span></div>
+            <div class="kpi"><b class="good">83%</b><span>Contacted &lt; 60 min</span></div>
+            <div class="kpi"><b>14</b><span>Appointments set</span></div>
+            <div class="kpi"><b class="acc">6</b><span>Sold / acquired</span></div>
+            <div class="kpi"><b class="bad">5</b><span>Unworked &gt; 24 h</span></div>
+          </div>
+          <table class="leads">
+            <tr><th>Customer · vehicle</th><th>Tier</th><th>Top reason</th><th>Source</th><th>Owner</th><th>Last activity</th><th>Disposition</th></tr>
+            <tr><td>Customer A<small>2024 luxury SUV · 70K mi</small></td><td><span class="t-badge tb1">1</span></td><td>Warranty expired by miles</td><td>Service</td><td>Salesperson 1</td><td>Call · 12 min ago</td><td><span class="disp d-desk">Desked</span></td></tr>
+            <tr><td>Customer B<small>2022 luxury SUV · paid off</small></td><td><span class="t-badge tb1">1</span></td><td>Paid off, +$33.7K equity</td><td>Service</td><td>Salesperson 2</td><td>Text · 1 h ago</td><td><span class="disp d-apt">Appt set</span></td></tr>
+            <tr><td>Client C household<small>9 vehicles · white-glove</small></td><td><span class="t-badge tb1">1</span></td><td>Multi-vehicle household</td><td>Service</td><td>Relationship owner</td><td>Visit · today</td><td><span class="disp d-con">Contacted</span></td></tr>
+            <tr><td>Customer D<small>2023 compact SUV · lease</small></td><td><span class="t-badge tb2">2</span></td><td>Lease ends in 90 days</td><td>OEM</td><td>Salesperson 3</td><td class="late">None · 26 h</td><td><span class="disp d-new">New</span></td></tr>
+            <tr><td>Customer E<small>2020 sedan · 62K mi</small></td><td><span class="t-badge tb2">2</span></td><td>$1,900 customer-pay RO</td><td>Service</td><td>Salesperson 1</td><td>Desk · yesterday</td><td><span class="disp d-won">Acquired</span></td></tr>
+            <tr><td>Customer F<small>2021 off-brand pickup</small></td><td><span class="t-badge tb2">2</span></td><td>Matches used-inventory gap</td><td>Service</td><td>Salesperson 4</td><td>Call · 3 h ago</td><td><span class="disp d-lost">Not now</span></td></tr>
+            <tr><td>Customer G<small>2024 sedan · finance</small></td><td><span class="t-badge tb2">2</span></td><td>Payment within $90/mo</td><td>CRM</td><td>Salesperson 2</td><td>Email · 2 h ago</td><td><span class="disp d-con">Contacted</span></td></tr>
+          </table>
+        </div>
+        <div class="side">
+          <div><h4>Dispositions · this week</h4>
+            <div class="fun"><span>New</span><div class="t"><div class="f" style="width:100%"></div></div><span class="v">48</span></div>
+            <div class="fun"><span>Contacted</span><div class="t"><div class="f" style="width:83%"></div></div><span class="v">40</span></div>
+            <div class="fun"><span>Appt set</span><div class="t"><div class="f" style="width:29%"></div></div><span class="v">14</span></div>
+            <div class="fun"><span>Desked</span><div class="t"><div class="f" style="width:21%"></div></div><span class="v">10</span></div>
+            <div class="fun"><span>Sold / acq.</span><div class="t"><div class="f" style="width:12.5%"></div></div><span class="v">6</span></div>
+          </div>
+          <div><h4>By owner · contacted / assigned</h4>
+            <div class="own-row"><span>Salesperson 1</span><b>12 / 13</b></div>
+            <div class="own-row"><span>Salesperson 2</span><b>10 / 11</b></div>
+            <div class="own-row"><span>Salesperson 3</span><b class="bad">5 / 10</b></div>
+            <div class="own-row"><span>Salesperson 4</span><b>8 / 9</b></div>
+            <div class="own-row"><span>Relationship owners</span><b>5 / 5</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">Illustrative data. Clicking a row opens the Customer 360 and household garage; clicking an owner filters the list; the CRM record opens in one click.</p>
+  </div>
+</section>
+
+<!-- CRM 3 Disposition model -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Disposition model · closed loop</div>
+    <h2>One status per lead, whatever the CRM calls it.</h2>
+    <p class="lead">Each CRM has its own lead statuses. LaneSight maps them to one standard lifecycle, so managers compare rooftops and owners like for like, and scoring learns from real outcomes.</p>
+    <div class="lifecycle">
+      <span class="disp d-new">New</span><span class="arrow">→</span>
+      <span class="disp d-con">Contacted</span><span class="arrow">→</span>
+      <span class="disp d-apt">Appointment set</span><span class="arrow">→</span>
+      <span class="disp d-desk">Desked</span><span class="arrow">→</span>
+      <span class="disp d-won">Sold / Acquired</span>
+      <span class="arrow" style="margin-left:14px">or</span>
+      <span class="disp d-lost">Not now</span><span class="disp d-lost">Lost</span><span class="disp d-lost">Do not contact</span>
+    </div>
+    <div class="grid g3" style="margin-top:22px">
+      <div class="card"><span class="num">SYNC</span><h3>Read from the CRM</h3><ul>
+        <li>Activities, appointments and status every 15 min</li>
+        <li>Each CRM's codes mapped to the standard lifecycle</li>
+        <li>Unmapped codes flagged for review, never dropped</li></ul></div>
+      <div class="card"><span class="num">RULES</span><h3>Manager guardrails</h3><ul>
+        <li>Tier 1 not contacted in 60 min → escalate to manager</li>
+        <li>Any Tier 1–2 lead idle 24 h → reassign prompt</li>
+        <li>Closing a lead requires an outcome and reason</li></ul></div>
+      <div class="card"><span class="num">LOOP</span><h3>Feed back to scoring</h3><ul>
+        <li>Outcomes by reason code tune scoring weights</li>
+        <li>Source attribution: service, CRM or OEM lead</li>
+        <li>Phase 2: write status and owner back to the CRM</li></ul></div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+      <table>
+        <tr><th>ID</th><th>New requirement</th></tr>
+        <tr><td class="mono">FR-21</td><td>Map each CRM's lead statuses to the standard disposition lifecycle</td></tr>
+        <tr><td class="mono">FR-22</td><td>Manager view: all leads, owners, speed and dispositions across rooftops and sources</td></tr>
+        <tr><td class="mono">FR-23</td><td>Escalation rules for uncontacted and idle Tier 1–2 leads</td></tr>
+      </table>
+      <table>
+        <tr><th>Story</th><th>New story and acceptance</th></tr>
+        <tr><td class="mono" style="white-space:nowrap">US-9<br>P1</td><td>Given I'm a sales manager, when I open LaneSight, then I see every Tier 1–2 lead with owner, last activity and disposition, and can filter by rooftop, owner, source and date in ≤ 2 s.</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- RT 1 Real-time arrival flow -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Real-time arrival · the visit starts at the curb</div>
+    <h2>Know who pulled in before the repair order opens.</h2>
+    <p class="lead">Today the first signal is the RO or the equity tool's arrival email. Identifying the vehicle as it enters the drive gives sales the whole visit to work with, not what's left after the inspection.</p>
+    <div class="rt-flow">
+      <div class="rt-step"><div class="dot">01</div><div class="when">0 s</div><h3>Vehicle arrives</h3><p>Lane camera reads the plate, or the porter or advisor scans the VIN barcode or plate with a phone.</p></div>
+      <div class="rt-step"><div class="dot">02</div><div class="when">target ≤ 10 s</div><h3>Identify</h3><p>Plate or VIN resolved to vehicle, customer and household from the golden record.</p></div>
+      <div class="rt-step"><div class="dot">03</div><div class="when">target ≤ 30 s</div><h3>Score</h3><p>Equity, lifecycle, service history and inventory fit scored; tier and reason codes assigned.</p></div>
+      <div class="rt-step"><div class="dot">04</div><div class="when">target ≤ 60 s</div><h3>Alert the owner</h3><p>Tier 1–2 → named owner and manager notified with talk track; manager pane updates live.</p></div>
+      <div class="rt-step"><div class="dot">05</div><div class="when">during the visit</div><h3>Engage & log</h3><p>Valuation pulled, conversation in the lane or waiting room, disposition logged.</p></div>
+    </div>
+    <div class="grid g3" style="margin-top:28px">
+      <div class="card"><h3>Unknown vehicle?</h3><p>No match in the golden record = conquest or new customer. Still scored on vehicle and inventory fit, and created as a new customer record for review.</p></div>
+      <div class="card"><h3>Not on today's schedule?</h3><p>Walk-ins and early arrivals are caught the same way, which the appointment-based alerts miss today.</p></div>
+      <div class="card"><h3>Human in the loop</h3><p>LaneSight alerts people; it never messages the customer on its own. Any automated SMS is dealer-approved and opt-in.</p></div>
+    </div>
+    <p class="note">Timings are design targets for the pilot, to be validated in UAT.</p>
+  </div>
+</section>
+
+<!-- RT 2 Capture methods + mobile scan -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Three ways to capture an arrival</div>
+    <h2>Cameras where they exist, a phone everywhere else.</h2>
+    <div class="phone-wrap" style="margin-top:14px">
+      <div class="phone"><div class="notch"></div><div class="screen">
+        <div class="cam"><div class="frame"><div class="bc"></div></div><div class="scanline"></div><div class="hint">Align door-jamb VIN barcode</div></div>
+        <div class="seg"><span class="on">VIN barcode</span><span>Plate</span><span>Type VIN</span></div>
+        <div class="res">
+          <div class="top"><div><b>Customer A</b><small>2024 luxury SUV · 70,473 mi · Rooftop 1</small></div><span class="t-badge tb1">1</span></div>
+          <div class="rs"><div>Warranty expired by miles</div><div>$1,900 customer-pay RO today</div><div>New vehicle within $105/mo</div></div>
+        </div>
+        <div class="btns"><span>Open 360</span><span class="p">Alert owner</span></div>
+        <div style="margin:10px 12px 0;font-size:10px;color:var(--ink3);text-align:center">Owner: Salesperson 1 · Last contact 5 days ago</div>
+      </div></div>
+      <div>
+        <div class="cap" style="grid-template-columns:1fr">
+          <div class="card"><h3>Lane cameras (partner) <span class="pill a tag">Hands-free</span></h3><p>A computer-vision partner such as SKAIVISION reads plates from the dealer's existing cameras as cars enter the drive, before an RO is written, and sends an arrival event to LaneSight.</p></div>
+          <div class="card"><h3>Mobile scan (LaneSight) <span class="pill g tag">Any rooftop</span></h3><p>Porters or advisors scan the door-jamb VIN barcode or snap the plate in a browser page on their phone. No app install, no new hardware. Also the fallback when a camera misreads.</p></div>
+          <div class="card"><h3>Check-in event (fallback) <span class="pill tag">Already there</span></h3><p>RO open or check-in from the service-lane tool. Slower, but guarantees every visit is scored even without cameras or scans.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RT 3 Camera partner integration -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Integration · computer-vision partner</div>
+    <h2>The camera sees the car. LaneSight knows the customer.</h2>
+    <p class="lead">A camera partner is strongest at detection, and LaneSight at identity, history and ownership. Together, an arrival becomes a ranked, owned opportunity within the first minute.</p>
+    <div class="grid g2">
+      <div>
+        <table>
+          <tr><th>Capability</th><th>Camera partner</th><th>LaneSight</th></tr>
+          <tr><td>Detect arrival, read plate</td><td><span class="role own">Leads</span></td><td>Mobile-scan fallback</td></tr>
+          <tr><td>Plate → VIN → customer</td><td>Partial</td><td><span class="role own">Leads</span> household golden record</td></tr>
+          <tr><td>Valuation & offer</td><td>Via appraisal partner (e.g., VinCue)</td><td>Reads it; checks against payoff</td></tr>
+          <tr><td>Equity, lifecycle, service pain</td><td>—</td><td><span class="role own">Leads</span></td></tr>
+          <tr><td>Owner routing & manager view</td><td>Manager alert</td><td><span class="role own">Leads</span> CRM-mapped dispositions</td></tr>
+          <tr><td>Customer outreach</td><td>Opt-in SMS</td><td>People-led; respects white-glove</td></tr>
+        </table>
+        <p class="note">Per SKAIVISION's published materials: runs on existing cameras (ONVIF-compatible), identifies vehicles by plate before the RO, pairs with VinCue for valuations, and lists CDK, Reynolds, Tekion, VinSolutions, eLead and DealerSocket integrations via API, webhook or data feed. To be confirmed in discovery.</p>
+      </div>
+      <div>
+        <pre class="code"><span class="c">// POST /events/arrival  (partner webhook or mobile scan)</span>
+{
+  <span class="k">"event_id"</span>: <span class="s">"arr_8f2c…"</span>,
+  <span class="k">"rooftop_id"</span>: <span class="s">"R1"</span>,
+  <span class="k">"source"</span>: <span class="s">"camera_partner | mobile_scan | checkin"</span>,
+  <span class="k">"captured_at"</span>: <span class="s">"2026-11-10T07:38:04-05:00"</span>,
+  <span class="k">"plate"</span>: { <span class="k">"value"</span>: <span class="s">"ABC1234"</span>, <span class="k">"state"</span>: <span class="s">"CT"</span>, <span class="k">"confidence"</span>: 0.97 },
+  <span class="k">"vin"</span>: <span class="s">"5UX…"</span>,          <span class="c">// when scanned</span>
+  <span class="k">"lane"</span>: <span class="s">"service-drive-1"</span>,
+  <span class="k">"image_ref"</span>: <span class="s">"partner://…"</span>  <span class="c">// stays with partner</span>
+}
+<span class="c">// → resolve → score → route → alert (≤ 60 s target)</span></pre>
+        <div class="card" style="margin-top:14px"><h3>Data handling</h3><ul>
+          <li>Plates and VINs treated as personal data; images stay with the partner</li>
+          <li>Low-confidence plate reads → prompt a mobile scan, never a guess</li>
+          <li>Duplicate events within 30 min merged into one visit</li></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RT 4 Requirements -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Real-time arrival · requirements</div>
+    <h2>What gets added to the spec.</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <table>
+        <tr><th>ID</th><th>New requirement</th></tr>
+        <tr><td class="mono">FR-24</td><td>Accept arrival events from a camera partner, mobile scan or check-in through one event contract</td></tr>
+        <tr><td class="mono">FR-25</td><td>Mobile web scanner for VIN barcodes and plate photos; manual VIN entry fallback</td></tr>
+        <tr><td class="mono">FR-26</td><td>Resolve plate → VIN → customer → household, with confidence; unknown vehicles create a review record</td></tr>
+        <tr><td class="mono">FR-27</td><td>Score, route and alert within 60 s of arrival; update the manager pane live</td></tr>
+        <tr><td class="mono">FR-28</td><td>De-duplicate events per visit; link arrival to the RO when it opens</td></tr>
+        <tr><td class="mono">FR-29</td><td>Measure arrival → alert → first contact by capture method</td></tr>
+      </table>
+      <div>
+        <table>
+          <tr><th>Story</th><th>New story and acceptance</th></tr>
+          <tr><td class="mono">US-10<br>P1</td><td>Given I'm a porter or advisor, when I scan a VIN barcode or plate, then within 10 s I see the customer, tier and owner, and can alert the owner in one tap.</td></tr>
+          <tr><td class="mono">US-11<br>P2</td><td>Given a rooftop has lane cameras, when a Tier 1–2 vehicle enters the drive, then the owner is alerted before the RO opens.</td></tr>
+        </table>
+        <div class="card" style="margin-top:14px"><h3>Open questions for discovery</h3><ul>
+          <li>Which pilot rooftops have usable lane cameras today?</li>
+          <li>Plate-to-VIN source: DMS vehicle records, partner, or a lookup service?</li>
+          <li>Partner contract, data-sharing terms and event latency</li>
+          <li>State rules and dealer policy on plate capture and retention</li></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 Data model -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Data model</div>
+    <h2>Three layers. The golden record lives in the middle.</h2>
+    <div class="grid g3" style="margin:18px 0">
+      <div class="card"><span class="num">LND_</span><h3>Landing</h3><p>Raw copy of each source. Typing, exact-duplicate removal, load metadata only.</p></div>
+      <div class="card" style="border-color:rgba(79,209,197,.5)"><span class="num">CNF_</span><h3>Conformed</h3><p>Identity resolution, households, VIN normalization, odometer and payoff logic, data-quality flags.</p></div>
+      <div class="card"><span class="num">REF_</span><h3>Refined</h3><p>Opportunities, scores, tiers, reason codes, worklists, benchmark scorecard.</p></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Core conformed entities</h3><p>
+        <span class="pill a">CNF_CUSTOMER</span><span class="pill a">CNF_HOUSEHOLD</span><span class="pill">CNF_VEHICLE</span><span class="pill">CNF_OWNERSHIP</span><span class="pill">CNF_CONTRACT</span><span class="pill">CNF_SERVICE_VISIT</span><span class="pill">CNF_INSPECTION</span><span class="pill">CNF_VALUATION</span><span class="pill">CNF_OUTREACH</span></p>
+        <p style="margin-top:12px">Refined: <span class="pill">REF_OPPORTUNITY</span><span class="pill">REF_WORKLIST_DAILY</span><span class="pill">REF_HOUSEHOLD_360</span><span class="pill">REF_BENCHMARK</span></p></div>
+      <div class="card"><h3>Identity resolution, in order</h3><ul>
+        <li>Exact DMS customer number across DMS, CRM, service lane</li>
+        <li>VIN plus current ownership</li>
+        <li>Normalized phone or email plus last name</li>
+        <li>Address plus last name for household grouping</li>
+        <li>Below threshold → review queue; specialist overrides kept</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 Scoring -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Scoring · starting weights, tuned in discovery</div>
+    <h2>Transparent first. Learned later.</h2>
+    <p class="lead">A rules-weighted 0–100 score OAG can tune. A learned model is considered only after 60 days of outcome data.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="bar"><span>Equity</span><div class="t"><div class="f" style="width:100%"></div></div><span class="v">30%</span></div>
+        <div class="bar"><span>Lifecycle</span><div class="t"><div class="f" style="width:66.7%"></div></div><span class="v">20%</span></div>
+        <div class="bar"><span>Service pain</span><div class="t"><div class="f" style="width:50%"></div></div><span class="v">15%</span></div>
+        <div class="bar"><span>Payment fit</span><div class="t"><div class="f" style="width:50%"></div></div><span class="v">15%</span></div>
+        <div class="bar"><span>Engagement</span><div class="t"><div class="f" style="width:33.3%"></div></div><span class="v">10%</span></div>
+        <div class="bar"><span>Acquisition need</span><div class="t"><div class="f" style="width:33.3%"></div></div><span class="v">10%</span></div>
+        <p class="note">Equity: positive equity, paid off. Lifecycle: term, maturity, lease miles, warranty. Service pain: customer-pay today, repeats, failed items. Payment fit: within ±$150/mo. Engagement: web activity, recency. Acquisition need: inventory gaps, spread.</p>
+      </div>
+      <div>
+        <div class="tier t1"><div class="n">1</div><div><b>Score ≥ 80, or paid off + positive equity + in service</b><p>Push alert to owner; contact before the customer leaves</p></div></div>
+        <div class="tier t2"><div class="n">2</div><div><b>Score 60–79</b><p>Worklist; contact same day</p></div></div>
+        <div class="tier t3"><div class="n">3</div><div><b>Score 40–59</b><p>Worklist; contact within 7 days</p></div></div>
+        <div class="tier t4"><div class="n">4</div><div><b>Score &lt; 40 or suppressed</b><p>Track only; no outreach</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 Reason codes -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Reason codes</div>
+    <h2>Every score comes with something to say.</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <table>
+        <tr><th>Code</th><th>Says</th></tr>
+        <tr><td class="mono">EQ_POS</td><td>Positive equity of $X based on verified payoff</td></tr>
+        <tr><td class="mono">PAID_OFF</td><td>Contract paid off; vehicle owned outright</td></tr>
+        <tr><td class="mono">WARR_EXP_MI</td><td>Factory warranty expired by miles</td></tr>
+        <tr><td class="mono">RO_PAIN</td><td>$X customer-pay repair today</td></tr>
+        <tr><td class="mono">PAY_FIT</td><td>New vehicle within $Y/mo of current payment</td></tr>
+      </table>
+      <table>
+        <tr><th>Code</th><th>Says</th></tr>
+        <tr><td class="mono">LEASE_MI_OVER</td><td>Projected over-mileage of Z miles at lease end</td></tr>
+        <tr><td class="mono">CLEAN_COND</td><td>Inspection all-pass; strong trade candidate</td></tr>
+        <tr><td class="mono">INV_NEED</td><td>Vehicle matches a used-inventory gap</td></tr>
+        <tr><td class="mono">HH_MULTI</td><td>Household owns N vehicles; relationship opportunity</td></tr>
+        <tr><td class="mono">WHITE_GLOVE</td><td>Relationship client; route to owner, no campaigns</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 19 Benchmark -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Benchmark against the incumbent</div>
+    <h2>Side by side, scored weekly.</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <table>
+        <tr><th>Measure</th><th>How it's tested</th></tr>
+        <tr><td>Equity accuracy</td><td>Both estimates vs. desked figures and verified payoff</td></tr>
+        <tr><td>Mileage accuracy</td><td>Actual vs. placeholder odometer</td></tr>
+        <tr><td>Coverage</td><td>Share of appointments scored</td></tr>
+        <tr><td>Household completeness</td><td>Garage surfaced for 10–20 known households</td></tr>
+        <tr><td>Ownership</td><td>High-priority with a named person</td></tr>
+        <tr><td>Speed</td><td>Arrival to first contact, by tier</td></tr>
+        <tr><td>Lift</td><td>Tier 1–2 conversion vs. incumbent top-scored</td></tr>
+      </table>
+      <table>
+        <tr><th>Incumbent output</th><th>Decision</th></tr>
+        <tr><td>Equity and payoff</td><td><span class="pill a">Rebuild</span> contract math is more accurate</td></tr>
+        <tr><td>Mileage</td><td><span class="pill a">Rebuild</span> placeholders observed</td></tr>
+        <tr><td>Propensity score</td><td><span class="pill y">Pull, compare</span> replace after benchmark</td></tr>
+        <tr><td>Scenarios + incentives</td><td><span class="pill y">Pull</span> needs OEM feed to replace</td></tr>
+        <tr><td>Web + campaign history</td><td><span class="pill y">Pull</span> unique behavioral data</td></tr>
+        <tr><td>Household / garage</td><td><span class="pill g">Build new</span> not provided today</td></tr>
+        <tr><td>Arrival alerts</td><td><span class="pill a">Rebuild</span> tiered and owner-routed</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 20 Case A -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Worked example · Case A</div>
+    <h2>Same customer, two very different deals.</h2>
+    <p class="lead">A 2024 luxury SUV financed at 6.49% for 72 months ($1,488/mo), in service with 70,473 miles.</p>
+    <div class="vs">
+      <div class="card old"><h3 class="bad">Incumbent tool</h3>
+        <div class="kv"><span>Mileage</span><span>20,000 (placeholder)</span></div>
+        <div class="kv"><span>Payoff</span><span>$67,800</span></div>
+        <div class="kv"><span>Equity</span><span class="bad">−$33,971</span></div>
+        <div class="kv"><span>Replacement payment</span><span>+$337/mo</span></div>
+        <div class="kv"><span>Owner</span><span>House account</span></div>
+        <div class="kv"><span>Reasons</span><span>Warranty, ownership</span></div></div>
+      <div class="card new"><h3 class="acc">LaneSight expected</h3>
+        <div class="kv"><span>Mileage</span><span>70,473 from repair order</span></div>
+        <div class="kv"><span>Payoff</span><span>~$44,900 from contract math</span></div>
+        <div class="kv"><span>Equity</span><span class="warn">≈ −$9,000</span></div>
+        <div class="kv"><span>Replacement payment</span><span class="good">+$105/mo</span></div>
+        <div class="kv"><span>Owner</span><span>Named salesperson</span></div>
+        <div class="kv"><span>Reasons</span><span>WARR_EXP_MI · RO_PAIN · PAY_FIT · CLEAN_COND</span></div></div>
+    </div>
+    <p class="note">Acceptance test: equity within $2,500 of the desk; inspection results visible before the quote.</p>
+  </div>
+</section>
+
+<!-- 21 Cases B & C -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Worked examples · Cases B & C</div>
+    <h2>The best customers need a person, not a campaign.</h2>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="card"><span class="num">CASE B · PAID OFF, CAMPAIGN FATIGUE</span><h3>2022 luxury SUV, +$33,700 equity, in service tomorrow</h3>
+        <p>Paid off. A replacement lowers the payment $194/mo. The incumbent sent 14 monthly emails with no recorded response.</p>
+        <p style="margin-top:12px"><span class="pill a">Tier 1</span><span class="pill">PAID_OFF</span><span class="pill">EQ_POS</span><span class="pill">PAY_FIT</span></p>
+        <p class="note">Test: named owner, mass campaigns suppressed, personal call before the visit.</p></div>
+      <div class="card"><span class="num">CASE C · COLLECTOR HOUSEHOLD</span><h3>~9 vehicles: collector-grade cars plus family vehicles</h3>
+        <p>The specialist estimates the incumbent surfaces under half of this household.</p>
+        <p style="margin-top:12px"><span class="pill g">One household</span><span class="pill">WHITE_GLOVE</span><span class="pill">HH_MULTI</span></p>
+        <p class="note">Test: all known VINs in one garage; relationship value on one card.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 Roadmap -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Delivery · 12 weeks, 4 gated phases</div>
+    <h2>Each phase ends with a sign-off.</h2>
+    <div class="phases" style="margin-top:28px">
+      <div class="phase"><div class="w">WEEKS 1–2</div><div class="line"></div><h3>Discovery & architecture</h3><ul><li>Rooftops, brands, users</li><li>Access for all 8 sources</li><li>Workflow per rooftop</li><li>Incumbent export or API</li><li>Targets, weights, routing</li><li>Household test set</li></ul><div class="gate">◆ Signed scope + access plan</div></div>
+      <div class="phase"><div class="w">WEEKS 3–5</div><div class="line"></div><h3>Environment & ingestion</h3><ul><li>Snowflake, roles, masking</li><li>DMS + service lane, 15 min</li><li>CRM, incumbent, inventory, book, OEM, lender</li><li>Data-quality tests + alerts</li></ul><div class="gate">◆ All sources landing, checks green</div></div>
+      <div class="phase"><div class="w">WEEKS 5–9</div><div class="line"></div><h3>Model & scoring</h3><ul><li>Customer, household, review queue</li><li>Vehicle, contract, service, valuation</li><li>Payoff, odometer, equity</li><li>Scores, tiers, reasons, routing</li><li>90-day back-test</li></ul><div class="gate">◆ Equity on target; households resolved</div></div>
+      <div class="phase"><div class="w">WEEKS 9–12</div><div class="line"></div><h3>Workbench & handoff</h3><ul><li>Worklist, 360, outreach logging</li><li>Manager view + CRM disposition sync</li><li>Real-time arrival: mobile scan + camera partner</li><li>Tiered alerts</li><li>Natural-language questions</li><li>UAT at each rooftop</li><li>4+ weeks side-by-side benchmark</li><li>Docs, runbooks, handoff</li></ul><div class="gate">◆ Keep, rebuild or retire decision</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 Risks & questions -->
+<section class="slide">
+  <div class="inner">
+    <div class="eyebrow">Risks & open questions</div>
+    <h2>What we need to learn in week one.</h2>
+    <div class="grid g2" style="margin-top:18px">
+      <table>
+        <tr><th>Risk</th><th>Mitigation</th></tr>
+        <tr><td>Source access delayed <span class="pill r">High</span></td><td>Requests in week 1; file-drop fallback</td></tr>
+        <tr><td>Incumbent data not exportable <span class="pill y">Med</span></td><td>Benchmark from desk outcomes and sampled records</td></tr>
+        <tr><td>False household merges <span class="pill y">Med</span></td><td>Threshold, review queue, overrides</td></tr>
+        <tr><td>Low adoption <span class="pill y">Med</span></td><td>Co-design with specialist; one-click logging; Tier 1–2 alerts only</td></tr>
+        <tr><td>Personal data exposure <span class="pill g">Low</span></td><td>Masking, roles, audit logs from day 1</td></tr>
+      </table>
+      <div class="card"><h3>Open questions</h3><ul>
+        <li>Does the incumbent tool offer an export or API?</li>
+        <li>How does the DMS store household links?</li>
+        <li>Who owns a household with multiple salespeople?</li>
+        <li>Collector vehicles: worklist or relationship view?</li>
+        <li>Lender payoff quotes, or contract math as standard?</li>
+        <li>What routing replaces house accounts?</li>
+        <li>Which inventory gaps drive acquisition need?</li>
+        <li>Where is today's tracking spreadsheet?</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 Close -->
+<section class="slide title-slide">
+  <div class="inner">
+    <div class="eyebrow">Next step</div>
+    <h1>Start with access.<br><span class="grad">Prove it on three rooftops.</span></h1>
+    <p class="lead" style="margin-top:22px">Confirm the pilot rooftops, open source access requests in week one, and agree the benchmark targets. Everything after that is in this spec.</p>
+    <div class="meta"><div>Assumptions <b>Snowflake available · read-only pilot · specialist + 2 salespeople per rooftop for UAT</b></div></div>
+  </div>
+</section>
+
+</main>
+<div class="hud">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <span class="count" id="count"></span>
+  <button id="next" aria-label="Next slide">→</button>
+</div>
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var i=0, n=slides.length;
+  function go(k){
+    i=Math.max(0,Math.min(n-1,k));
+    slides.forEach(function(s,j){s.classList.toggle('active',j===i)});
+    document.getElementById('count').textContent=(i+1)+' / '+n;
+    document.getElementById('progress').style.width=((i+1)/n*100)+'%';
+    try{if(location.protocol!=='about:'&&history.replaceState)history.replaceState(null,'','#'+(i+1));}catch(e){}
+  }
+  var h;try{h=parseInt((location.hash||'').slice(1),10);}catch(e){h=NaN} go(isNaN(h)?0:h-1);
+  document.getElementById('next').onclick=function(){go(i+1)};
+  document.getElementById('prev').onclick=function(){go(i-1)};
+  document.addEventListener('keydown',function(e){
+    if(['ArrowRight','PageDown',' '].indexOf(e.key)>-1){e.preventDefault();go(i+1)}
+    if(['ArrowLeft','PageUp'].indexOf(e.key)>-1){e.preventDefault();go(i-1)}
+    if(e.key==='Home')go(0); if(e.key==='End')go(n-1);
+  });
+  var x0=null;
+  document.addEventListener('touchstart',function(e){x0=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',function(e){if(x0===null)return;var dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)go(i+(dx<0?1:-1));x0=null},{passive:true});
+})();
+</script>
+</body>
+</html>
